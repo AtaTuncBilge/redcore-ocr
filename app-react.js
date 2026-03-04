@@ -51,8 +51,8 @@
 
             <section class="hero-card panel reveal-up delay-1" id="uploadSection">
               <div class="hero-content">
-                <h1>REDCORE-OCR<a href="./invoice-ocr.html" class="dot-link-hero" title="Secret Invoice OCR" style="text-decoration:none; margin-left:10px;"><span class="dot"></span></a></h1>
-                <p class="subtitle">Advanced universal OCR. Instant recognition for PDF and Images.</p>
+                <h1>REDCORE-OCR <a href="./invoice-ocr.html" class="dot-link-hero" title="Secret Invoice OCR"><span class="dot"></span></a></h1>
+                <p class="subtitle">Premium universal OCR platform. Instant recognition for PDF and Images with auto-language detection.</p>
                 <div class="hero-stats">
                   <span>auto-language</span>
                   <span>pdf + images</span>
@@ -74,24 +74,33 @@
 
               <section class="panel progress-section" id="progressSection" style="display:none;">
                 <div class="progress-top">
-                  <h3>OCR Processing</h3>
-                  <button class="btn btn-secondary btn-compact" id="backToUploadBtn" type="button">Cancel</button>
+                  <h3>ocr processing</h3>
+                  <button class="btn btn-secondary btn-compact" id="backToUploadBtn" type="button">cancel</button>
                 </div>
                 
-                <!-- Simulation Container -->
+                <!-- Simulation Container (Stacked Layout) -->
                 <div class="simulation-view">
                   <div class="simulation-container" id="simulationContainer">
                     <canvas id="simulationCanvas"></canvas>
                     <div id="simulationOverlay" class="simulation-overlay"></div>
                   </div>
-                  <div class="simulation-meta">
-                    <p class="progress-copy" id="progressText">Analyzing content...</p>
+                  <div class="simulation-footer">
                     <div class="progress-bar">
                       <div class="progress-fill" id="progressFill"></div>
                     </div>
-                    <div class="processing-meta">
-                      <span>Detected Language: <strong id="detectedLang">Detecting...</strong></span>
-                      <span>Stability: <strong id="stabilityRate">0%</strong></span>
+                    <div class="simulation-data-grid">
+                      <div class="sim-stat">
+                        <label>status</label>
+                        <span id="progressText">analyzing...</span>
+                      </div>
+                      <div class="sim-stat">
+                        <label>language</label>
+                        <span id="detectedLang">detecting...</span>
+                      </div>
+                      <div class="sim-stat">
+                        <label>stability</label>
+                        <span id="stabilityRate">0%</span>
+                      </div>
                     </div>
                   </div>
                 </div>
