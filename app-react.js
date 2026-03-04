@@ -34,10 +34,8 @@
             <header class="site-header panel reveal-up">
               <div class="site-brand">
                 <div class="hero-mark">
-                  <a class="dot-link" href="./invoice-ocr.html" title="Invoice OCR easter egg" aria-label="Go to Invoice OCR">
-                    <span class="dot"></span>
-                  </a>
-                  <span class="brand">RED CORE OCR</span><span class="build-tag">v2.0</span>
+                  <span class="dot"></span>
+                  <span class="brand">RED CORE OCR</span><span class="build-tag">v2.1</span>
                 </div>
               </div>
               <nav class="site-nav" aria-label="Main menu">
@@ -53,12 +51,12 @@
 
             <section class="hero-card panel reveal-up delay-1" id="uploadSection">
               <div class="hero-content">
-                <h1>REDCORE OCR<a href="./invoice-ocr.html" class="dot-link-hero" style="text-decoration:none; margin-left:10px;"><span class="dot"></span></a></h1>
-                <p class="subtitle">Advanced general-purpose OCR supporting over 80 languages. Upload your documents and get instant results.</p>
+                <h1>REDCORE OCR<a href="./invoice-ocr.html" class="dot-link-hero" title="Secret Invoice OCR" style="text-decoration:none; margin-left:10px;"><span class="dot"></span></a></h1>
+                <p class="subtitle">Advanced OCR with automatic language detection. Now supports PDF and Images.</p>
                 <div class="hero-stats">
-                  <span>80+ Languages</span>
-                  <span>Real-Time Processing</span>
-                  <span>redcore-ocr.cloud</span>
+                  <span>Auto-Language</span>
+                  <span>PDF + Images</span>
+                  <span>Real-Time Simulation</span>
                 </div>
               </div>
             </section>
@@ -66,30 +64,36 @@
             <main class="main-stack">
               <section class="panel upload-section reveal-up delay-2">
                 <div class="upload-box" id="uploadBox">
-                  <div class="upload-chip">GENERAL OCR</div>
-                  <h2>Upload Documents</h2>
-                  <p>Drop or select your PDF files. The system performs full-text OCR page by page.</p>
-                  <input type="file" id="fileInput" accept=".pdf" multiple hidden>
-                  <div class="language-control">
-                    <label for="ocrLanguageSelect">Select OCR Language</label>
-                    <select id="ocrLanguageSelect" class="auth-input" aria-label="OCR language"></select>
-                  </div>
-                  <button class="btn btn-primary" id="pickFileBtn" type="button">Select PDF</button>
+                  <div class="upload-chip">UNIVERSAL OCR</div>
+                  <h2>Upload Files</h2>
+                  <p>Drop PDF or Image files (JPG, PNG). Language is detected automatically.</p>
+                  <input type="file" id="fileInput" accept=".pdf,image/*" multiple hidden>
+                  <button class="btn btn-primary" id="pickFileBtn" type="button">Select Files</button>
                 </div>
               </section>
 
               <section class="panel progress-section" id="progressSection" style="display:none;">
                 <div class="progress-top">
                   <h3>OCR Processing</h3>
-                  <button class="btn btn-secondary btn-compact" id="backToUploadBtn" type="button">Go Back</button>
+                  <button class="btn btn-secondary btn-compact" id="backToUploadBtn" type="button">Cancel</button>
                 </div>
-                <p class="progress-copy" id="progressText">Preparing...</p>
-                <div class="progress-bar">
-                  <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="processing-meta">
-                  <span>Stability Rate</span>
-                  <strong id="stabilityRate">0%</strong>
+                
+                <!-- Simulation Container -->
+                <div class="simulation-view">
+                  <div class="simulation-container" id="simulationContainer">
+                    <canvas id="simulationCanvas"></canvas>
+                    <div id="simulationOverlay" class="simulation-overlay"></div>
+                  </div>
+                  <div class="simulation-meta">
+                    <p class="progress-copy" id="progressText">Analyzing content...</p>
+                    <div class="progress-bar">
+                      <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="processing-meta">
+                      <span>Detected Language: <strong id="detectedLang">Detecting...</strong></span>
+                      <span>Stability: <strong id="stabilityRate">0%</strong></span>
+                    </div>
+                  </div>
                 </div>
               </section>
 

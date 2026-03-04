@@ -1,20 +1,8 @@
 const PDF_SCALE = 2.4;
-const MAX_FILES = 5;
+const MAX_FILES = 8;
 const MAX_PREVIEW_CHARS = 240;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-const LANGUAGE_CODES = [
-  "eng", "tur", "deu", "fra", "ita", "spa", "por", "ara", "rus", "jpn", "kor",
-  "chi_sim", "chi_tra", "afr", "amh", "asm", "aze", "aze_cyrl", "bel", "ben",
-  "bod", "bos", "bre", "bul", "cat", "ceb", "ces", "chr", "cym", "dan",
-  "dzo", "ell", "enm", "epo", "est", "eus", "fao", "fas", "fil", "fin",
-  "frk", "frm", "gle", "glg", "grc", "guj", "hat", "heb", "hin", "hrv",
-  "hun", "hye", "iku", "ind", "isl", "ita_old", "jav", "kan", "kat", "kat_old",
-  "kaz", "khm", "kir", "kmr", "lao", "lat", "lav", "lit", "ltz", "mal",
-  "mar", "mkd", "mlt", "mon", "mri", "msa", "mya", "nep", "nld", "nor",
-  "ori", "pan", "pol"
-];
 
 const LANGUAGE_LABELS = {
   eng: "English",
@@ -33,6 +21,7 @@ const LANGUAGE_LABELS = {
 };
 
 let ocrRows = [];
+let isProcessing = false;
 
 const ui = {
   // Auth elements
@@ -59,7 +48,12 @@ const ui = {
   warningBox: null,
   downloadBtn: null,
   backToUploadBtn: null,
-  languageSelect: null,
+  detectedLang: null,
+
+  // Simulation elements
+  simulationContainer: null,
+  simulationCanvas: null,
+  simulationOverlay: null,
 
   // Review elements
   submitReviewBtn: null,
@@ -89,7 +83,11 @@ function bindUi() {
   ui.warningBox = document.getElementById("warningBox");
   ui.downloadBtn = document.getElementById("downloadBtn");
   ui.backToUploadBtn = document.getElementById("backToUploadBtn");
-  ui.languageSelect = document.getElementById("ocrLanguageSelect");
+  ui.detectedLang = document.getElementById("detectedLang");
+
+  ui.simulationContainer = document.getElementById("simulationContainer");
+  ui.simulationCanvas = document.getElementById("simulationCanvas");
+  ui.simulationOverlay = document.getElementById("simulationOverlay");
 
   ui.submitReviewBtn = document.getElementById("submitReviewBtn");
   ui.newReviewText = document.getElementById("newReviewText");
@@ -163,102 +161,54 @@ function initReviews() {
   }
 }
 
-function titleCaseWord(word) {
-  return word ? word.charAt(0).toUpperCase() + word.slice(1) : "";
-}
-
 function languageLabel(code) {
   if (LANGUAGE_LABELS[code]) {
     return `${LANGUAGE_LABELS[code]} (${code})`;
   }
-
-  return `${code.split("_").map(titleCaseWord).join(" ")} (${code})`;
-}
-
-function initLanguageSelect() {
-  if (!ui.languageSelect) {
-    return;
-  }
-
-  ui.languageSelect.innerHTML = "";
-
-  LANGUAGE_CODES.forEach((code) => {
-    const option = document.createElement("option");
-    option.value = code;
-    option.textContent = languageLabel(code);
-    if (code === "eng") {
-      option.selected = true;
-    }
-    ui.languageSelect.appendChild(option);
-  });
-}
-
-function getSelectedLanguage() {
-  if (!ui.languageSelect || !ui.languageSelect.value) {
-    return "eng";
-  }
-  return ui.languageSelect.value;
+  return code.toUpperCase();
 }
 
 function deriveStabilityRate(progress) {
   const p = Math.max(0, Math.min(100, Number(progress) || 0));
-  if (p >= 100) {
-    return 100;
-  }
+  if (p >= 100) return 100;
   return Math.max(35, Math.min(99, Math.round(35 + p * 0.64)));
 }
 
 function updateProgress(progress, message) {
   const safeProgress = Math.max(0, Math.min(100, Number(progress) || 0));
-  if (ui.progressFill) {
-    ui.progressFill.style.width = `${safeProgress}%`;
-  }
-  if (ui.progressText) {
-    ui.progressText.textContent = message;
-  }
-  if (ui.stabilityRate) {
-    ui.stabilityRate.textContent = `${deriveStabilityRate(safeProgress)}%`;
-  }
+  if (ui.progressFill) ui.progressFill.style.width = `${safeProgress}%`;
+  if (ui.progressText) ui.progressText.textContent = message;
+  if (ui.stabilityRate) ui.stabilityRate.textContent = `${deriveStabilityRate(safeProgress)}%`;
 }
 
 function setWarning(message) {
-  if (!ui.warningBox) {
-    return;
-  }
-
+  if (!ui.warningBox) return;
   if (!message) {
     ui.warningBox.style.display = "none";
     ui.warningBox.textContent = "";
     return;
   }
-
   ui.warningBox.style.display = "block";
   ui.warningBox.textContent = message;
 }
 
 function goBackToUpload() {
   ocrRows = [];
-  if (ui.fileInput) {
-    ui.fileInput.value = "";
-  }
+  isProcessing = false;
+  if (ui.fileInput) ui.fileInput.value = "";
   updateProgress(0, "Ready.");
   setWarning("");
 
   const uploadSection = document.querySelector(".upload-section");
-  if (uploadSection) {
-    uploadSection.style.display = "block";
-  }
-  if (ui.progressSection) {
-    ui.progressSection.style.display = "none";
-  }
-  if (ui.resultsSection) {
-    ui.resultsSection.style.display = "none";
-  }
+  if (uploadSection) uploadSection.style.display = "block";
+  if (ui.progressSection) ui.progressSection.style.display = "none";
+  if (ui.resultsSection) ui.resultsSection.style.display = "none";
+  if (ui.simulationOverlay) ui.simulationOverlay.innerHTML = "";
 }
 
 function sanitizeFiles(fileList) {
   return Array.from(fileList || [])
-    .filter((file) => file && file.type === "application/pdf")
+    .filter((file) => file && (file.type === "application/pdf" || file.type.startsWith("image/")))
     .slice(0, MAX_FILES);
 }
 
@@ -267,25 +217,40 @@ async function renderPageToCanvas(pdfPage) {
   const canvas = document.createElement("canvas");
   canvas.width = Math.ceil(viewport.width);
   canvas.height = Math.ceil(viewport.height);
-
   const context = canvas.getContext("2d", { alpha: false });
   await pdfPage.render({ canvasContext: context, viewport }).promise;
   return canvas;
 }
 
+async function loadImageToCanvas(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 function textPreview(text) {
   const clean = String(text || "").replace(/\s+/g, " ").trim();
-  if (clean.length <= MAX_PREVIEW_CHARS) {
-    return clean;
-  }
+  if (clean.length <= MAX_PREVIEW_CHARS) return clean;
   return `${clean.slice(0, MAX_PREVIEW_CHARS)}...`;
 }
 
 function updateResultsTable() {
-  if (!ui.resultsBody) {
-    return;
-  }
-
+  if (!ui.resultsBody) return;
   ui.resultsBody.innerHTML = "";
 
   if (!ocrRows.length) {
@@ -302,12 +267,8 @@ function updateResultsTable() {
   }
 
   const uniqueFiles = new Set(ocrRows.map((row) => row.fileName));
-  if (ui.totalInvoices) {
-    ui.totalInvoices.textContent = String(uniqueFiles.size);
-  }
-  if (ui.totalItems) {
-    ui.totalItems.textContent = String(ocrRows.length);
-  }
+  if (ui.totalInvoices) ui.totalInvoices.textContent = String(uniqueFiles.size);
+  if (ui.totalItems) ui.totalItems.textContent = String(ocrRows.length);
 
   ocrRows.forEach((rowData) => {
     const row = document.createElement("tr");
@@ -331,205 +292,168 @@ function updateResultsTable() {
       }
       row.appendChild(cell);
     });
-
     ui.resultsBody.appendChild(row);
   });
 }
 
 async function createOcrWorker() {
-  // Use local langPath for trained data, fallback to CDN if needed
   const options = {
-    logger: m => console.log(m),
-    langPath: './lang-data' // This points to our project folder
+    logger: m => {
+      if (m.status === "recognizing text") {
+        updateProgress(m.progress * 100, `Simulating OCR: ${Math.round(m.progress * 100)}%`);
+      }
+    },
+    langPath: './lang-data'
   };
+  return await Tesseract.createWorker(options);
+}
+
+function startSimulation(canvas) {
+  if (!ui.simulationCanvas || !ui.simulationOverlay) return;
   
-  const worker = await Tesseract.createWorker(options);
-  return worker;
+  const ctx = ui.simulationCanvas.getContext('2d');
+  ui.simulationCanvas.width = canvas.width;
+  ui.simulationCanvas.height = canvas.height;
+  ctx.drawImage(canvas, 0, 0);
+  
+  ui.simulationOverlay.innerHTML = "";
+  ui.simulationOverlay.style.width = `${ui.simulationCanvas.clientWidth}px`;
+  ui.simulationOverlay.style.height = `${ui.simulationCanvas.clientHeight}px`;
+}
+
+function addSimulationWord(word) {
+  if (!ui.simulationOverlay || !ui.simulationCanvas) return;
+  
+  const span = document.createElement("span");
+  span.className = "sim-word";
+  span.textContent = word.text;
+  
+  const scaleX = ui.simulationCanvas.clientWidth / ui.simulationCanvas.width;
+  const scaleY = ui.simulationCanvas.clientHeight / ui.simulationCanvas.height;
+  
+  span.style.left = `${word.bbox.x0 * scaleX}px`;
+  span.style.top = `${word.bbox.y0 * scaleY}px`;
+  span.style.fontSize = `${(word.bbox.y1 - word.bbox.y0) * scaleY}px`;
+  
+  ui.simulationOverlay.appendChild(span);
+}
+
+async function detectLanguage(worker, canvas) {
+  // Try common languages first to detect script
+  await worker.loadLanguage('eng+tur+fra+deu+spa');
+  await worker.initialize('eng+tur+fra+deu+spa');
+  const result = await worker.detect(canvas);
+  // Default to English if detection is uncertain
+  return result.data.script || 'eng';
 }
 
 async function processFiles(files) {
   const validFiles = sanitizeFiles(files);
-  if (!validFiles.length) {
-    alert("Please upload a valid PDF file.");
-    return;
-  }
+  if (!validFiles.length || isProcessing) return;
 
-  const selectedLanguage = getSelectedLanguage();
-  const selectedLanguageLabel = languageLabel(selectedLanguage);
+  isProcessing = true;
   const uploadSection = document.querySelector(".upload-section");
-
-  if (uploadSection) {
-    uploadSection.style.display = "none";
-  }
-  if (ui.progressSection) {
-    ui.progressSection.style.display = "block";
-  }
-  if (ui.resultsSection) {
-    ui.resultsSection.style.display = "none";
-  }
+  if (uploadSection) uploadSection.style.display = "none";
+  if (ui.progressSection) ui.progressSection.style.display = "block";
+  if (ui.resultsSection) ui.resultsSection.style.display = "none";
 
   setWarning("");
-  updateProgress(5, `Preparing OCR for ${validFiles.length} file(s)...`);
-
   ocrRows = [];
 
   let worker;
   try {
     worker = await createOcrWorker();
-    updateProgress(10, `Loading OCR language: ${selectedLanguageLabel}`);
-    await worker.loadLanguage(selectedLanguage);
-    await worker.initialize(selectedLanguage);
-    await worker.setParameters({
-      preserve_interword_spaces: "1",
-      user_defined_dpi: "300"
-    });
-
-    const pageCounts = [];
-    for (let i = 0; i < validFiles.length; i += 1) {
-      const buffer = await validFiles[i].arrayBuffer();
-      const pdf = await pdfjsLib.getDocument(buffer).promise;
-      pageCounts.push(pdf.numPages);
-      pdf.destroy();
-    }
-
-    const totalPages = pageCounts.reduce((sum, count) => sum + count, 0);
-    let pagesDone = 0;
-
-    for (let fileIndex = 0; fileIndex < validFiles.length; fileIndex += 1) {
+    
+    for (let fileIndex = 0; fileIndex < validFiles.length; fileIndex++) {
       const file = validFiles[fileIndex];
-      const pdfBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument(pdfBuffer).promise;
+      updateProgress(5, `Analyzing ${file.name}...`);
+      
+      let pages = [];
+      if (file.type === "application/pdf") {
+        const buffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument(buffer).promise;
+        for (let p = 1; p <= pdf.numPages; p++) {
+          const page = await pdf.getPage(p);
+          pages.push(await renderPageToCanvas(page));
+        }
+        pdf.destroy();
+      } else {
+        pages.push(await loadImageToCanvas(file));
+      }
 
-      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-        const page = await pdf.getPage(pageNumber);
-        const canvas = await renderPageToCanvas(page);
-        const progressRatio = totalPages > 0 ? pagesDone / totalPages : 0;
-        updateProgress(
-          20 + Math.round(progressRatio * 70),
-          `OCR running: ${file.name} page ${pageNumber}/${pdf.numPages}`
-        );
-
-        const result = await worker.recognize(canvas);
-        const text = result && result.data ? result.data.text || "" : "";
-        const confidence = result && result.data ? Number(result.data.confidence) || 0 : 0;
+      for (let pIdx = 0; pIdx < pages.length; pIdx++) {
+        const canvas = pages[pIdx];
+        startSimulation(canvas);
+        
+        updateProgress(10, `Auto-detecting language...`);
+        const lang = await detectLanguage(worker, canvas);
+        if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(lang);
+        
+        await worker.loadLanguage(lang);
+        await worker.initialize(lang);
+        
+        const { data } = await worker.recognize(canvas);
+        
+        // Simulation: Add words with delay for "fading in" effect
+        if (data.words) {
+          for (let i = 0; i < data.words.length; i++) {
+            if (!isProcessing) break;
+            addSimulationWord(data.words[i]);
+            if (i % 5 === 0) await new Promise(r => setTimeout(r, 10));
+          }
+        }
 
         ocrRows.push({
           fileName: file.name,
-          page: pageNumber,
-          language: selectedLanguage,
-          confidence,
-          characters: text.trim().length,
-          preview: textPreview(text),
-          fullText: text
+          page: pIdx + 1,
+          language: lang,
+          confidence: data.confidence,
+          characters: data.text.trim().length,
+          preview: textPreview(data.text),
+          fullText: data.text
         });
-
-        pagesDone += 1;
       }
-
-      pdf.destroy();
     }
 
     updateResultsTable();
     updateProgress(100, "OCR completed.");
-
-    if (ui.progressSection) {
-      ui.progressSection.style.display = "none";
-    }
-    if (ui.resultsSection) {
-      ui.resultsSection.style.display = "block";
-    }
-
-    window.dispatchEvent(
-      new CustomEvent("ocr:completed", {
-        detail: {
-          itemCount: ocrRows.length,
-          fileCount: validFiles.length
-        }
-      })
-    );
+    if (ui.progressSection) ui.progressSection.style.display = "none";
+    if (ui.resultsSection) ui.resultsSection.style.display = "block";
   } catch (error) {
+    console.error(error);
     setWarning(`OCR error: ${error.message}`);
-    alert(`An error occurred while processing OCR: ${error.message}`);
     goBackToUpload();
   } finally {
-    if (worker) {
-      await worker.terminate();
-    }
+    isProcessing = false;
+    if (worker) await worker.terminate();
   }
 }
 
 function downloadExcel() {
-  if (!Array.isArray(ocrRows) || !ocrRows.length) {
-    alert("No OCR data available to download.");
-    return;
-  }
-
-  const sheetRows = ocrRows.map((row) => [
-    row.fileName,
-    row.page,
-    row.language,
-    Math.round(row.confidence),
-    row.characters,
-    row.fullText
-  ]);
-
-  const sheet = XLSX.utils.aoa_to_sheet([
-    ["File", "Page", "Language", "Confidence", "Characters", "OCR Text"],
-    ...sheetRows
-  ]);
-
-  sheet["!cols"] = [
-    { wch: 32 },
-    { wch: 8 },
-    { wch: 14 },
-    { wch: 12 },
-    { wch: 12 },
-    { wch: 110 }
-  ];
-
+  if (!ocrRows.length) return;
+  const sheetRows = ocrRows.map(row => [row.fileName, row.page, row.language, Math.round(row.confidence), row.characters, row.fullText]);
+  const sheet = XLSX.utils.aoa_to_sheet([["File", "Page", "Language", "Confidence", "Characters", "OCR Text"], ...sheetRows]);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, sheet, "OCR Text");
-  const stamp = new Date().toISOString().slice(0, 10);
-  XLSX.writeFile(workbook, `redcore_ocr_export_${stamp}.xlsx`);
+  XLSX.writeFile(workbook, `redcore_ocr_export_${new Date().toISOString().slice(0, 10)}.xlsx`);
 }
 
 function wireEvents() {
-  if (!bindUi()) {
-    setTimeout(wireEvents, 80);
-    return;
-  }
-
+  if (!bindUi()) { setTimeout(wireEvents, 80); return; }
   handleAuth();
   initNavigation();
-  initLanguageSelect();
   initReviews();
 
-  ui.fileInput.addEventListener("change", (event) => {
-    processFiles(event.target.files);
-  });
-
+  ui.fileInput.addEventListener("change", (e) => processFiles(e.target.files));
   ui.pickFileBtn.addEventListener("click", () => ui.fileInput.click());
   ui.downloadBtn.addEventListener("click", downloadExcel);
+  if (ui.backToUploadBtn) ui.backToUploadBtn.addEventListener("click", goBackToUpload);
 
-  if (ui.backToUploadBtn) {
-    ui.backToUploadBtn.addEventListener("click", goBackToUpload);
-  }
-
-  ui.uploadBox.addEventListener("dragover", (event) => {
-    event.preventDefault();
-    ui.uploadBox.classList.add("dragover");
-  });
-
-  ui.uploadBox.addEventListener("dragleave", () => {
-    ui.uploadBox.classList.remove("dragover");
-  });
-
-  ui.uploadBox.addEventListener("drop", (event) => {
-    event.preventDefault();
-    ui.uploadBox.classList.remove("dragover");
-    processFiles(event.dataTransfer.files);
-  });
+  ui.uploadBox.addEventListener("dragover", (e) => { e.preventDefault(); ui.uploadBox.classList.add("dragover"); });
+  ui.uploadBox.addEventListener("dragleave", () => ui.uploadBox.classList.remove("dragover"));
+  ui.uploadBox.addEventListener("drop", (e) => { e.preventDefault(); ui.uploadBox.classList.remove("dragover"); processFiles(e.dataTransfer.files); });
 }
 
 wireEvents();
+
 
