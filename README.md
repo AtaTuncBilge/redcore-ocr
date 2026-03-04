@@ -1,24 +1,26 @@
-# alpha ocr static
+# redcore ocr static
 
-this is the static-only publish bundle.
+Static deploy bundle for public OCR usage.
 
-## what is included
-- `index.html`
+## included pages
+- `index.html`: Main OCR (80-language support, plain text extraction)
+- `invoice-ocr.html`: Invoice OCR easter egg (line-item extraction)
+
+## included scripts
+- `app-react.js`: Main OCR page UI
+- `app.js`: Main OCR engine (PDF.js + Tesseract + Excel export)
+- `invoice-app.js`: Invoice OCR engine
+- `ocr-core.js`: Invoice parsing logic
 - `style.css`
-- `app-react.js` (minified/mangled)
-- `app.js` (minified/mangled)
-- `ocr-core.js` (minified/mangled)
 - `favicon.svg`
 
-## login/profile/review storage
-all account/profile/review data is saved in browser local storage on each user device.
-
-## important
-client-side code cannot be truly hidden from browser devtools. this bundle only makes it harder to read.
-
 ## deploy (cloudflare pages)
-1. create a new github repo and push this folder contents.
-2. connect that repo to cloudflare pages.
-3. framework preset: none.
-4. build command: none.
-5. output directory: `/`.
+1. Create a new GitHub repo and push this folder contents.
+2. Connect that repo to Cloudflare Pages.
+3. Framework preset: `none`
+4. Build command: `none`
+5. Output directory: `/`
+
+## notes
+- OCR runs in the browser (client-side).
+- Best results require clear PDF scans.

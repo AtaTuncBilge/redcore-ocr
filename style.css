@@ -1013,6 +1013,30 @@ footer {
   padding: 18px 20px;
 }
 
+.dot-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.dot-link .dot {
+  cursor: pointer;
+}
+
+.language-control {
+  margin: 14px auto 12px;
+  max-width: 360px;
+  text-align: left;
+}
+
+.language-control label {
+  display: block;
+  margin: 0 0 6px;
+  color: #dcdce3;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .footer-grid {
   display: grid;
   grid-template-columns: minmax(260px, 420px) 1fr;

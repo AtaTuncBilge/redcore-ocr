@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redcore Invoice OCR</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=alpha1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="ocr-core.js?v=alpha1"></script>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <div class="app-shell" id="invoiceAppShell">
+    <header class="site-header panel">
+      <div class="site-brand">
+        <div class="hero-mark">
+          <a class="dot-link" href="./index.html" title="Back to main OCR" aria-label="Back to main OCR">
+            <span class="dot"></span>
+          </a>
+          <span class="brand">RED CORE OCR</span><span class="build-tag">invoice easter egg</span>
+        </div>
+      </div>
+      <nav class="site-nav" aria-label="Invoice menu">
+        <a href="./index.html" class="site-link">Main OCR</a>
+      </nav>
+    </header>
+
+    <section class="hero-card panel" id="uploadSection">
+      <div class="hero-content">
+        <h1>Invoice OCR</h1>
+        <p class="subtitle">Extract invoice line items and export them as Excel.</p>
+        <div class="hero-stats">
+          <span>Invoice Parser</span>
+          <span>Turkish + English OCR</span>
+          <span>Excel Export</span>
+        </div>
+      </div>
+    </section>
+
+    <main class="main-stack">
+      <section class="panel upload-section">
+        <div class="upload-box" id="uploadBox">
+          <div class="upload-chip">PDF + Invoice OCR</div>
+          <h2>Upload Invoice PDFs</h2>
+          <p>Drop or select PDF invoices. The parser extracts matched line items.</p>
+          <input type="file" id="fileInput" accept=".pdf" multiple hidden>
+          <button class="btn btn-primary" id="pickFileBtn" type="button">Select PDF</button>
+        </div>
+      </section>
+
+      <section class="panel progress-section" id="progressSection" style="display:none;">
+        <div class="progress-top">
+          <h3>Invoice OCR Processing</h3>
+          <button class="btn btn-secondary btn-compact" id="backToUploadBtn" type="button">Go Back</button>
+        </div>
+        <p class="progress-copy" id="progressText">Preparing...</p>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="processing-meta">
+          <span>Stability Rate</span>
+          <strong id="stabilityRate">0%</strong>
+        </div>
+      </section>
+
+      <section class="panel results-section" id="resultsSection" style="display:none;">
+        <div class="results-header">
+          <div>
+            <h2>Extracted Invoice Line Items</h2>
+            <p>Detected line items are listed below and can be exported.</p>
+          </div>
+          <div class="stats">
+            <div class="stat-pill"><span id="totalInvoices">0</span> Invoices</div>
+            <div class="stat-pill"><span id="totalItems">0</span> Items</div>
+          </div>
+        </div>
+
+        <div id="warningBox" class="warning-box" style="display:none;"></div>
+        <div class="table-wrap">
+          <table id="resultsTable">
+            <thead>
+              <tr>
+                <th>Invoice Date</th>
+                <th>Invoice No</th>
+                <th>Product Description</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-success" id="downloadBtn" type="button">Download Excel</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer panel site-footer-min">
+      <p>redcore-ocr made by red person</p>
+    </footer>
+  </div>
+
+  <script src="invoice-app.js?v=alpha1" defer></script>
+</body>
+</html>

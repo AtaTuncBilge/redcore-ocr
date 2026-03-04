@@ -1,1 +1,432 @@
-pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";const ocrCore=window.OcrCore||{},OCR_CONFIG={debugProgress:!1,defaultFastMode:!0,renderScaleFast:3,renderScaleStandard:4,fallbackRenderScale:4,maxMegaPixelsFast:8,maxMegaPixelsStandard:10,languageFast:"tur",languageStandard:"tur+eng",earlyExitRankScore:95,maxAttemptsFast:2,maxAttemptsStandard:3},ACCEPT_CONFIDENCE=72,RETRY_CONFIDENCE=60;let extractedData=[],latestDebugPayload=null,latestWarnings=[],activeLiveOcrState=null;const TEST_MAX_FILES=5;let fileInput=null,uploadBox=null,progressSection=null,resultsSection=null,progressFill=null,progressText=null,resultsBody=null,downloadBtn=null,totalInvoicesEl=null,totalItemsEl=null,stabilityRateEl=null,liveLog=null,ocrPreview=null,previewCanvas=null,previewText=null,warningBox=null,downloadDebugBtn=null,backToUploadBtn=null,listenersBound=!1;function bindUiElements(){return fileInput=document.getElementById("fileInput"),uploadBox=document.getElementById("uploadBox"),progressSection=document.getElementById("progressSection"),resultsSection=document.getElementById("resultsSection"),progressFill=document.getElementById("progressFill"),progressText=document.getElementById("progressText"),resultsBody=document.getElementById("resultsBody"),downloadBtn=document.getElementById("downloadBtn"),totalInvoicesEl=document.getElementById("totalInvoices"),totalItemsEl=document.getElementById("totalItems"),stabilityRateEl=document.getElementById("stabilityRate"),liveLog=document.getElementById("liveLog"),ocrPreview=document.getElementById("ocrPreview"),previewCanvas=document.getElementById("previewCanvas"),previewText=document.getElementById("ocrTextPreview"),warningBox=document.getElementById("warningBox"),downloadDebugBtn=document.getElementById("downloadDebugBtn"),backToUploadBtn=document.getElementById("backToUploadBtn"),Boolean(fileInput&&uploadBox&&progressSection&&resultsSection&&progressFill&&progressText&&resultsBody&&downloadBtn&&totalInvoicesEl&&totalItemsEl)}function initUiBindings(){return!!listenersBound||!!bindUiElements()&&(fileInput.addEventListener("change",handleFileSelect),downloadBtn.addEventListener("click",downloadExcel),downloadDebugBtn&&downloadDebugBtn.addEventListener("click",downloadDebugTraceJson),backToUploadBtn&&backToUploadBtn.addEventListener("click",goBackToUpload),uploadBox.addEventListener("dragover",e=>{e.preventDefault(),uploadBox.classList.add("dragover")}),uploadBox.addEventListener("dragleave",()=>{uploadBox.classList.remove("dragover")}),uploadBox.addEventListener("drop",e=>{e.preventDefault(),uploadBox.classList.remove("dragover");const t=Array.from(e.dataTransfer.files||[]).filter(e=>e&&"application/pdf"===e.type);t.length?processFiles(t):alert("Please upload a valid PDF file.")}),listenersBound=!0,!0)}function bootstrapUiBindings(e=40){initUiBindings()||e<=0||setTimeout(()=>bootstrapUiBindings(e-1),50)}function handleFileSelect(e){const t=Array.from(e.target.files||[]).filter(e=>e&&"application/pdf"===e.type);t.length&&processFiles(t)}function isDebugMode(){if("1"!==new URLSearchParams(window.location.search).get("debug"))return!1;const e=(window.location&&window.location.hostname?window.location.hostname:"").toLowerCase();return"localhost"===e||"127.0.0.1"===e}function deriveStabilityRate(e){const t=Math.max(0,Math.min(100,Number(e)||0));return t>=100?100:Math.max(35,Math.min(99,Math.round(35+.64*t)))}function updateProgress(e,t){const n=Math.max(0,Math.min(100,Number(e)||0));progressFill&&(progressFill.style.width=`${n}%`),progressText&&(progressText.textContent=t),stabilityRateEl&&(stabilityRateEl.textContent=`${deriveStabilityRate(n)}%`)}function addLiveLog(e,t){if(!liveLog)return;const n=document.createElement("li");n.className=t?`tone-${t}`:"",n.textContent=e,liveLog.appendChild(n),liveLog.scrollTop=liveLog.scrollHeight}function resetLiveLog(){liveLog&&(liveLog.innerHTML="")}function setWarnings(e){if(latestWarnings=e||[],warningBox){if(!latestWarnings.length)return warningBox.style.display="none",void(warningBox.textContent="");warningBox.style.display="block",warningBox.textContent=latestWarnings.join(" | ")}}function goBackToUpload(){extractedData=[],latestWarnings=[],latestDebugPayload=null,fileInput&&(fileInput.value=""),progressFill&&(progressFill.style.width="0%"),progressText&&(progressText.textContent="Ready."),stabilityRateEl&&(stabilityRateEl.textContent="0%"),resetLiveLog(),setWarnings([]);const e=document.querySelector(".upload-section");e&&(e.style.display="block"),progressSection&&(progressSection.style.display="none"),resultsSection&&(resultsSection.style.display="none")}function cloneCanvas(e){const t=document.createElement("canvas");return t.width=e.width,t.height=e.height,t.getContext("2d").drawImage(e,0,0),t}function preprocessLight(e,t,n){const a=e.getImageData(0,0,t,n),o=a.data;for(let e=0;e<o.length;e+=4){const t=.299*o[e]+.587*o[e+1]+.114*o[e+2],n=Math.max(0,Math.min(255,1.35*(t-128)+128));o[e]=n,o[e+1]=n,o[e+2]=n,o[e+3]=255}e.putImageData(a,0,0)}function histogramStretch(e){const t=e.length/4,n=new Uint8Array(t);for(let t=0,a=0;t<e.length;t+=4,a++)n[a]=e[t];n.sort();const a=n[Math.floor(.02*t)],o=n[Math.floor(.98*t)],r=o-a;if(!(r<=0))for(let t=0;t<e.length;t+=4){let n=e[t];n=n<a?0:n>o?255:(n-a)/r*255,e[t]=e[t+1]=e[t+2]=n}}function contrastEnhance(e,t){for(let n=0;n<e.length;n+=4){let a=(e[n]-128)*t+128;a=Math.max(0,Math.min(255,a)),a=255*Math.pow(a/255,.92),e[n]=e[n+1]=e[n+2]=a}}function adaptiveThreshold(e,t,n,a,o){const r=Math.floor(a/2),i=new Float64Array((t+1)*(n+1));for(let a=0;a<n;a++){let n=0;for(let o=0;o<t;o++)n+=e[4*(a*t+o)],i[(a+1)*(t+1)+(o+1)]=n+i[a*(t+1)+(o+1)]}const s=new Uint8Array(t*n);for(let t=0,n=0;t<e.length;t+=4,n++)s[n]=e[t];for(let a=0;a<n;a++)for(let l=0;l<t;l++){const c=Math.max(0,l-r),d=Math.max(0,a-r),g=Math.min(t-1,l+r),u=Math.min(n-1,a+r),p=(g-c+1)*(u-d+1),m=(i[(u+1)*(t+1)+(g+1)]-i[d*(t+1)+(g+1)]-i[(u+1)*(t+1)+c]+i[d*(t+1)+c])/p,h=4*(a*t+l),f=s[a*t+l]>m-o?255:0;e[h]=e[h+1]=e[h+2]=f}}function despeckle(e,t,n){const a=new Uint8ClampedArray(e);for(let o=1;o<n-1;o++)for(let n=1;n<t-1;n++){const r=4*(o*t+n);if(0!==a[r])continue;let i=0;for(let e=-1;e<=1;e++)for(let r=-1;r<=1;r++)0===r&&0===e||0===a[4*((o+e)*t+(n+r))]&&i++;0===i&&(e[r]=e[r+1]=e[r+2]=255)}}function preprocessBalanced(e,t,n){const a=e.getImageData(0,0,t,n),o=a.data;for(let e=0;e<o.length;e+=4){const t=.299*o[e]+.587*o[e+1]+.114*o[e+2];o[e]=o[e+1]=o[e+2]=t,o[e+3]=255}histogramStretch(o),contrastEnhance(o,1.3),adaptiveThreshold(o,t,n,25,10),despeckle(o,t,n),e.putImageData(a,0,0)}function preprocessAggressive(e,t,n){const a=e.getImageData(0,0,t,n),o=a.data;for(let e=0;e<o.length;e+=4){const t=.299*o[e]+.587*o[e+1]+.114*o[e+2],n=Math.max(0,Math.min(255,2*(t-128)+128));o[e]=n,o[e+1]=n,o[e+2]=n}const r=new Array(256).fill(0);for(let e=0;e<o.length;e+=4)r[o[e]]+=1;const i=t*n;let s=0;for(let e=0;e<256;e++)s+=e*r[e];let l=145,c=0,d=0,g=0;for(let e=0;e<256;e++){if(g+=r[e],!g)continue;const t=i-g;if(!t)break;d+=e*r[e];const n=d/g,a=(s-d)/t,o=g*t*(n-a)*(n-a);o>c&&(c=o,l=e)}for(let e=0;e<o.length;e+=4){const t=o[e]>l?255:0;o[e]=t,o[e+1]=t,o[e+2]=t}e.putImageData(a,0,0)}function cropBottomRegion(e,t=.45){const n=Math.floor(e.height*(1-t)),a=e.height-n,o=document.createElement("canvas");return o.width=e.width,o.height=a,o.getContext("2d").drawImage(e,0,n,e.width,a,0,0,e.width,a),o}function scoreOcrText(e){const t=String(e||"").toUpperCase(),n=[["FATURA NO",12],["TARIH",8],["TL",10],["ADET",8],["KDV",6],["TUTAR",8]];let a=0;for(const[e,o]of n)t.includes(e)&&(a+=o);return a+=4*(t.match(/\d{1,3}(?:\.\d{3})*,\d{2}/g)||[]).length,t.length<80&&(a-=6),a}function computeAdaptiveScale(e,t,n){const a=e.getViewport({scale:t}),o=a.width*a.height,r=1e6*n;if(o<=r)return t;const i=Math.sqrt(r/o);return Math.max(1.15,t*i)}function collectRuntimeConfig(e){const t=new URLSearchParams(window.location.search),n=Number(t.get("pages")),a="1"===t.get("fast"),o=Number.isFinite(n)&&n>0?Math.min(e,Math.floor(n)):e,r=a||OCR_CONFIG.defaultFastMode||1===o;return{maxPages:o,fastMode:r,ocrLanguage:r?OCR_CONFIG.languageFast:OCR_CONFIG.languageStandard,renderScale:r?OCR_CONFIG.renderScaleFast:OCR_CONFIG.renderScaleStandard}}async function runAdaptiveOcr(e,t,n){const a=[],o=[{source:"none",psm:"3"},{source:"light",psm:"3"},{source:"balanced",psm:"4"}];for(const r of o){const o=t(r.source);if(!o)continue;"function"==typeof n.onAttemptStart&&n.onAttemptStart(r),await e.setParameters({tessedit_pageseg_mode:r.psm});const i=await e.recognize(o),s=i.data.text||"",l=i.data.confidence||0,c=l+scoreOcrText(s);if(a.push({source:r.source,mode:r.psm,text:s,confidence:l,rankScore:c,canvas:o}),addLiveLog(`OCR denemesi: ${r.source}/psm${r.psm} - guven ${Math.round(l)}%`,"info"),l>=72)break}return a.sort((e,t)=>t.rankScore-e.rankScore),a[0]}function showLivePreview(e,t){if(!ocrPreview||!previewCanvas||!previewText)return;ocrPreview.style.display="block";const n=Math.min(1,960/e.width,560/e.height),a=Math.max(1,Math.floor(e.width*n)),o=Math.max(1,Math.floor(e.height*n));previewCanvas.width=a,previewCanvas.height=o;const r=previewCanvas.getContext("2d");r.imageSmoothingEnabled=!0,r.imageSmoothingQuality="high",r.clearRect(0,0,a,o),r.drawImage(e,0,0,a,o),previewText.textContent=String(t||"").slice(0,1200)}async function runOcrPass(e,t,n,a){const o=[],r={pageNumber:0,totalPages:t.maxPages,phaseStart:0,phaseSpan:0,attemptLabel:"light/psm6",lastPercent:-1};activeLiveOcrState=r;for(let i=1;i<=t.maxPages;i++){const s=20+(i-1)/t.maxPages*60;updateProgress(s,`Sayfa ${i}/${t.maxPages} render ediliyor...`);const l=await e.getPage(i),c=computeAdaptiveScale(l,a.enhanced?OCR_CONFIG.fallbackRenderScale:t.renderScale,t.fastMode?OCR_CONFIG.maxMegaPixelsFast:OCR_CONFIG.maxMegaPixelsStandard),d=l.getViewport({scale:c}),g=document.createElement("canvas");g.width=d.width,g.height=d.height,await l.render({canvasContext:g.getContext("2d"),viewport:d}).promise,addLiveLog(`Sayfa ${i} olcek: ${c.toFixed(2)}`,"muted");const u={none:null,original:null,light:null,balanced:null,aggressive:null},p=e=>{if(u[e])return u[e];if("none"===e||"original"===e)return u[e]=cloneCanvas(g),u[e];if("light"===e){const e=cloneCanvas(g);return preprocessLight(e.getContext("2d"),e.width,e.height),u.light=e,e}if("balanced"===e){const e=cloneCanvas(g);return preprocessBalanced(e.getContext("2d"),e.width,e.height),u.balanced=e,e}if("aggressive"===e){const e=cloneCanvas(g);return preprocessAggressive(e.getContext("2d"),e.width,e.height),u.aggressive=e,e}return null},m=60/t.maxPages*.74;r.pageNumber=i,r.phaseStart=s+8,r.phaseSpan=m,r.lastPercent=-1,updateProgress(s+8,`Sayfa ${i}/${t.maxPages} - OCR (%0)`);const h=await runAdaptiveOcr(n,p,{...t,onAttemptStart:e=>{r.attemptLabel=`${e.source}/psm${e.psm}`,r.lastPercent=-1,updateProgress(r.phaseStart,`Sayfa ${i}/${t.maxPages} - OCR (${r.attemptLabel}) %0`)}}),f=ocrCore.normalizeOcrTextPreserveLines||(e=>e),v=ocrCore.aiRefineOcrText||(e=>e);let w=v(f(h.text||""));if(a.includeTableCrop){const e=cropBottomRegion(g,.45);preprocessAggressive(e.getContext("2d"),e.width,e.height),await n.setParameters({tessedit_pageseg_mode:"6"}),w=`${w}\n${v(f((await n.recognize(e)).data.text||""))}`,addLiveLog(`Sayfa ${i}: alt tablo bolgesi OCR eklendi`,"info")}o.push(w),showLivePreview(h.canvas||p(h.source)||g,w),addLiveLog("Page  completed: /psm","success")}return activeLiveOcrState=null,o.join("\n--- SAYFA SONU ---\n")}function dumpDebugTrace(e){if(e&&Array.isArray(e.lineTrace))for(const t of e.lineTrace);}async function extractFromSingleFile(e,t){const n=await e.arrayBuffer(),a=await pdfjsLib.getDocument(n).promise,o=collectRuntimeConfig(a.numPages);updateProgress(12,":  page(s) will be processed.");const r=await Tesseract.createWorker({logger:e=>{if("recognizing text"!==e.status)return;if(!activeLiveOcrState||!activeLiveOcrState.pageNumber)return;const t=Math.round(100*e.progress);t<activeLiveOcrState.lastPercent+2&&100!==t||(activeLiveOcrState.lastPercent=t,updateProgress(activeLiveOcrState.phaseStart+t/100*activeLiveOcrState.phaseSpan,`Sayfa ${activeLiveOcrState.pageNumber}/${activeLiveOcrState.totalPages} - OCR (${activeLiveOcrState.attemptLabel}) %${t}`))}});updateProgress(18,`${e.name}: OCR dili yukleniyor...`),await r.loadLanguage(o.ocrLanguage),await r.initialize(o.ocrLanguage),await r.setParameters({preserve_interword_spaces:"1",user_defined_dpi:"300"});const i=await runOcrPass(a,o,r,{enhanced:!1,includeTableCrop:!1});let s=ocrCore.extractInvoiceDocument(i,{debug:t});if(t&&dumpDebugTrace(s.debug),s.debug&&0===s.debug.MONEY_VALUES_FOUND){addLiveLog(`${e.name}: MONEY_VALUES_FOUND = 0, fallback OCR baslatiliyor.`,"error");const n=await runOcrPass(a,o,r,{enhanced:!0,includeTableCrop:!0});s=ocrCore.extractInvoiceDocument(n,{debug:t}),t&&dumpDebugTrace(s.debug)}return await r.terminate(),s}async function processFiles(e){try{const t=Array.from(e||[]).filter(e=>e&&"application/pdf"===e.type).slice(0,5);if(!t.length)return void alert("Please upload a valid PDF file.");document.querySelector(".upload-section").style.display="none",progressSection.style.display="block",resultsSection.style.display="none",resetLiveLog(),setWarnings([]),updateProgress(5,1===t.length?"Processing 1 file...":t.length+" dosya is being processed..."),addLiveLog(1===t.length?"Single-file mode is active.":"Batch mode is active: "+t.length+" file(s).","info"),ocrCore&&ocrCore.FEATURE_FLAGS&&ocrCore.FEATURE_FLAGS.parserVersion&&addLiveLog("Parser version: "+ocrCore.FEATURE_FLAGS.parserVersion,"muted");const n=isDebugMode();extractedData=[],latestDebugPayload=null;const a=[],o=[];for(let e=0;e<t.length;e++){const r=t[e];addLiveLog("["+(e+1)+"/"+t.length+"] "+r.name+" is being processed...","info");const i=await extractFromSingleFile(r,n);extractedData.push(...i.items||[]),a.push(...i.warnings||[]),i.debug&&o.push({file:r.name,debug:i.debug}),addLiveLog("["+(e+1)+"/"+t.length+"] "+r.name+" completed.","success")}latestDebugPayload={files:o},setWarnings([...new Set(a)]),updateProgress(94,"Preparing results..."),displayResults(),updateProgress(100,"Completed."),addLiveLog("OCR and line-item extraction completed.","success"),setTimeout(()=>{progressSection&&(progressSection.style.display="none"),resultsSection&&(resultsSection.style.display="block"),window.dispatchEvent(new CustomEvent("ocr:completed",{detail:{itemCount:Array.isArray(extractedData)?extractedData.length:0,fileCount:t.length}}))},350)}catch(e){addLiveLog("Hata: "+e.message,"error"),alert("An error occurred while processing the PDF: "+e.message),location.reload()}}async function processFile(e){return processFiles([e])}function displayResults(){if(resultsBody.innerHTML="",!Array.isArray(extractedData)||0===extractedData.length){const e=document.createElement("tr"),t=document.createElement("td");return t.colSpan=6,t.className="empty-row",t.textContent="No Windows, Microsoft, or license-related items were found.",e.appendChild(t),resultsBody.appendChild(e),totalInvoicesEl.textContent="0",void(totalItemsEl.textContent="0")}const e=[...new Set(extractedData.map(e=>e.invoiceNo))].length;totalInvoicesEl.textContent=String(e),totalItemsEl.textContent=String(extractedData.length);for(const e of extractedData){const t=document.createElement("tr");[e.invoiceDate||"Unknown",e.invoiceNo||"Unknown",e.description||"-",e.quantity||"1",e.unitPrice||"Unknown",e.total||"Unknown"].forEach((e,n)=>{const a=document.createElement("td");if(1===n||5===n){const t=document.createElement("strong");t.textContent=String(e),a.appendChild(t)}else a.textContent=String(e);t.appendChild(a)}),resultsBody.appendChild(t)}}function downloadDebugTraceJson(){if(!latestDebugPayload)return void alert("Henuz indirilecek debug trace yok.");const e=JSON.stringify(latestDebugPayload,null,2),t=new Blob([e],{type:"application/json;charset=utf-8"}),n=URL.createObjectURL(t),a=document.createElement("a");a.href=n,a.download="ocr-extraction-trace.json",document.body.appendChild(a),a.click(),a.remove(),URL.revokeObjectURL(n)}function downloadExcel(){if(!Array.isArray(extractedData)||0===extractedData.length)return void alert("No data available to download.");const e=extractedData.map(e=>[e.invoiceDate||"Unknown",e.invoiceNo||"Unknown",e.description||"-",Number(e.quantity)||1,"function"==typeof ocrCore.parseTurkishMoney?ocrCore.parseTurkishMoney(e.unitPrice):null,"function"==typeof ocrCore.parseTurkishMoney?ocrCore.parseTurkishMoney(e.total):null]),t=XLSX.utils.aoa_to_sheet([["Invoice Date","Invoice No","Product Description","Quantity","Unit Price","Total"],...e]);t["!cols"]=[{wch:16},{wch:20},{wch:58},{wch:10},{wch:16},{wch:16}],t["!autofilter"]={ref:`A1:F${e.length+1}`};for(let n=2;n<=e.length+1;n++){const e=`D${n}`,a=`E${n}`,o=`F${n}`;t[e]&&(t[e].t="n"),t[a]&&(t[a].t="n",t[a].z="#,##0.00"),t[o]&&(t[o].t="n",t[o].z="#,##0.00")}const n=XLSX.utils.book_new();XLSX.utils.book_append_sheet(n,t,"Invoice Items");const a=(new Date).toISOString().slice(0,10);XLSX.writeFile(n,`invoice_license_report_${a}.xlsx`)}window.downloadExtractorDebug=downloadDebugTraceJson,bootstrapUiBindings();
+const PDF_SCALE = 2.4;
+const MAX_FILES = 5;
+const MAX_PREVIEW_CHARS = 240;
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+const LANGUAGE_CODES = [
+  "afr", "amh", "ara", "asm", "aze", "aze_cyrl", "bel", "ben", "bod", "bos",
+  "bre", "bul", "cat", "ceb", "ces", "chi_sim", "chi_tra", "chr", "cym", "dan",
+  "deu", "dzo", "ell", "eng", "enm", "epo", "est", "eus", "fao", "fas",
+  "fil", "fin", "fra", "frk", "frm", "gle", "glg", "grc", "guj", "hat",
+  "heb", "hin", "hrv", "hun", "hye", "iku", "ind", "isl", "ita", "ita_old",
+  "jav", "jpn", "kan", "kat", "kat_old", "kaz", "khm", "kir", "kmr", "kor",
+  "lao", "lat", "lav", "lit", "ltz", "mal", "mar", "mkd", "mlt", "mon",
+  "mri", "msa", "mya", "nep", "nld", "nor", "ori", "pan", "pol", "tur"
+];
+
+const LANGUAGE_LABELS = {
+  eng: "English",
+  tur: "Turkish",
+  deu: "German",
+  fra: "French",
+  ita: "Italian",
+  spa: "Spanish",
+  por: "Portuguese",
+  ara: "Arabic",
+  rus: "Russian",
+  jpn: "Japanese",
+  kor: "Korean",
+  chi_sim: "Chinese (Simplified)",
+  chi_tra: "Chinese (Traditional)"
+};
+
+let ocrRows = [];
+
+const ui = {
+  fileInput: null,
+  pickFileBtn: null,
+  uploadBox: null,
+  progressSection: null,
+  resultsSection: null,
+  progressFill: null,
+  progressText: null,
+  resultsBody: null,
+  totalInvoices: null,
+  totalItems: null,
+  stabilityRate: null,
+  warningBox: null,
+  downloadBtn: null,
+  backToUploadBtn: null,
+  languageSelect: null
+};
+
+function bindUi() {
+  ui.fileInput = document.getElementById("fileInput");
+  ui.pickFileBtn = document.getElementById("pickFileBtn");
+  ui.uploadBox = document.getElementById("uploadBox");
+  ui.progressSection = document.getElementById("progressSection");
+  ui.resultsSection = document.getElementById("resultsSection");
+  ui.progressFill = document.getElementById("progressFill");
+  ui.progressText = document.getElementById("progressText");
+  ui.resultsBody = document.getElementById("resultsBody");
+  ui.totalInvoices = document.getElementById("totalInvoices");
+  ui.totalItems = document.getElementById("totalItems");
+  ui.stabilityRate = document.getElementById("stabilityRate");
+  ui.warningBox = document.getElementById("warningBox");
+  ui.downloadBtn = document.getElementById("downloadBtn");
+  ui.backToUploadBtn = document.getElementById("backToUploadBtn");
+  ui.languageSelect = document.getElementById("ocrLanguageSelect");
+
+  return Boolean(
+    ui.fileInput && ui.uploadBox && ui.progressSection && ui.resultsSection &&
+    ui.progressFill && ui.progressText && ui.resultsBody && ui.downloadBtn &&
+    ui.totalInvoices && ui.totalItems
+  );
+}
+
+function titleCaseWord(word) {
+  return word ? word.charAt(0).toUpperCase() + word.slice(1) : "";
+}
+
+function languageLabel(code) {
+  if (LANGUAGE_LABELS[code]) {
+    return `${LANGUAGE_LABELS[code]} (${code})`;
+  }
+
+  return `${code.split("_").map(titleCaseWord).join(" ")} (${code})`;
+}
+
+function initLanguageSelect() {
+  if (!ui.languageSelect) {
+    return;
+  }
+
+  ui.languageSelect.innerHTML = "";
+
+  LANGUAGE_CODES.forEach((code) => {
+    const option = document.createElement("option");
+    option.value = code;
+    option.textContent = languageLabel(code);
+    if (code === "eng") {
+      option.selected = true;
+    }
+    ui.languageSelect.appendChild(option);
+  });
+}
+
+function getSelectedLanguage() {
+  if (!ui.languageSelect || !ui.languageSelect.value) {
+    return "eng";
+  }
+  return ui.languageSelect.value;
+}
+
+function deriveStabilityRate(progress) {
+  const p = Math.max(0, Math.min(100, Number(progress) || 0));
+  if (p >= 100) {
+    return 100;
+  }
+  return Math.max(35, Math.min(99, Math.round(35 + p * 0.64)));
+}
+
+function updateProgress(progress, message) {
+  const safeProgress = Math.max(0, Math.min(100, Number(progress) || 0));
+  if (ui.progressFill) {
+    ui.progressFill.style.width = `${safeProgress}%`;
+  }
+  if (ui.progressText) {
+    ui.progressText.textContent = message;
+  }
+  if (ui.stabilityRate) {
+    ui.stabilityRate.textContent = `${deriveStabilityRate(safeProgress)}%`;
+  }
+}
+
+function setWarning(message) {
+  if (!ui.warningBox) {
+    return;
+  }
+
+  if (!message) {
+    ui.warningBox.style.display = "none";
+    ui.warningBox.textContent = "";
+    return;
+  }
+
+  ui.warningBox.style.display = "block";
+  ui.warningBox.textContent = message;
+}
+
+function goBackToUpload() {
+  ocrRows = [];
+  if (ui.fileInput) {
+    ui.fileInput.value = "";
+  }
+  updateProgress(0, "Ready.");
+  setWarning("");
+
+  const uploadSection = document.querySelector(".upload-section");
+  if (uploadSection) {
+    uploadSection.style.display = "block";
+  }
+  if (ui.progressSection) {
+    ui.progressSection.style.display = "none";
+  }
+  if (ui.resultsSection) {
+    ui.resultsSection.style.display = "none";
+  }
+}
+
+function sanitizeFiles(fileList) {
+  return Array.from(fileList || [])
+    .filter((file) => file && file.type === "application/pdf")
+    .slice(0, MAX_FILES);
+}
+
+async function renderPageToCanvas(pdfPage) {
+  const viewport = pdfPage.getViewport({ scale: PDF_SCALE });
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(viewport.width);
+  canvas.height = Math.ceil(viewport.height);
+
+  const context = canvas.getContext("2d", { alpha: false });
+  await pdfPage.render({ canvasContext: context, viewport }).promise;
+  return canvas;
+}
+
+function textPreview(text) {
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+  if (clean.length <= MAX_PREVIEW_CHARS) {
+    return clean;
+  }
+  return `${clean.slice(0, MAX_PREVIEW_CHARS)}...`;
+}
+
+function updateResultsTable() {
+  if (!ui.resultsBody) {
+    return;
+  }
+
+  ui.resultsBody.innerHTML = "";
+
+  if (!ocrRows.length) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 6;
+    cell.className = "empty-row";
+    cell.textContent = "No OCR output was produced.";
+    row.appendChild(cell);
+    ui.resultsBody.appendChild(row);
+    if (ui.totalInvoices) ui.totalInvoices.textContent = "0";
+    if (ui.totalItems) ui.totalItems.textContent = "0";
+    return;
+  }
+
+  const uniqueFiles = new Set(ocrRows.map((row) => row.fileName));
+  if (ui.totalInvoices) {
+    ui.totalInvoices.textContent = String(uniqueFiles.size);
+  }
+  if (ui.totalItems) {
+    ui.totalItems.textContent = String(ocrRows.length);
+  }
+
+  ocrRows.forEach((rowData) => {
+    const row = document.createElement("tr");
+    const cells = [
+      rowData.fileName,
+      String(rowData.page),
+      rowData.language,
+      `${Math.round(rowData.confidence)}%`,
+      String(rowData.characters),
+      rowData.preview
+    ];
+
+    cells.forEach((value, index) => {
+      const cell = document.createElement("td");
+      if (index === 1 || index === 3) {
+        const strong = document.createElement("strong");
+        strong.textContent = value;
+        cell.appendChild(strong);
+      } else {
+        cell.textContent = value;
+      }
+      row.appendChild(cell);
+    });
+
+    ui.resultsBody.appendChild(row);
+  });
+}
+
+async function processFiles(files) {
+  const validFiles = sanitizeFiles(files);
+  if (!validFiles.length) {
+    alert("Please upload a valid PDF file.");
+    return;
+  }
+
+  const selectedLanguage = getSelectedLanguage();
+  const selectedLanguageLabel = languageLabel(selectedLanguage);
+  const uploadSection = document.querySelector(".upload-section");
+
+  if (uploadSection) {
+    uploadSection.style.display = "none";
+  }
+  if (ui.progressSection) {
+    ui.progressSection.style.display = "block";
+  }
+  if (ui.resultsSection) {
+    ui.resultsSection.style.display = "none";
+  }
+
+  setWarning("");
+  updateProgress(5, `Preparing OCR for ${validFiles.length} file(s)...`);
+
+  ocrRows = [];
+
+  let worker;
+  try {
+    worker = await Tesseract.createWorker();
+    updateProgress(10, `Loading OCR language: ${selectedLanguageLabel}`);
+    await worker.loadLanguage(selectedLanguage);
+    await worker.initialize(selectedLanguage);
+    await worker.setParameters({
+      preserve_interword_spaces: "1",
+      user_defined_dpi: "300"
+    });
+
+    const pageCounts = [];
+    for (let i = 0; i < validFiles.length; i += 1) {
+      const buffer = await validFiles[i].arrayBuffer();
+      const pdf = await pdfjsLib.getDocument(buffer).promise;
+      pageCounts.push(pdf.numPages);
+      pdf.destroy();
+    }
+
+    const totalPages = pageCounts.reduce((sum, count) => sum + count, 0);
+    let pagesDone = 0;
+
+    for (let fileIndex = 0; fileIndex < validFiles.length; fileIndex += 1) {
+      const file = validFiles[fileIndex];
+      const pdfBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument(pdfBuffer).promise;
+
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber);
+        const canvas = await renderPageToCanvas(page);
+        const progressRatio = totalPages > 0 ? pagesDone / totalPages : 0;
+        updateProgress(
+          20 + Math.round(progressRatio * 70),
+          `OCR running: ${file.name} page ${pageNumber}/${pdf.numPages}`
+        );
+
+        const result = await worker.recognize(canvas);
+        const text = result && result.data ? result.data.text || "" : "";
+        const confidence = result && result.data ? Number(result.data.confidence) || 0 : 0;
+
+        ocrRows.push({
+          fileName: file.name,
+          page: pageNumber,
+          language: selectedLanguage,
+          confidence,
+          characters: text.trim().length,
+          preview: textPreview(text),
+          fullText: text
+        });
+
+        pagesDone += 1;
+      }
+
+      pdf.destroy();
+    }
+
+    updateResultsTable();
+    updateProgress(100, "OCR completed.");
+
+    if (ui.progressSection) {
+      ui.progressSection.style.display = "none";
+    }
+    if (ui.resultsSection) {
+      ui.resultsSection.style.display = "block";
+    }
+
+    window.dispatchEvent(
+      new CustomEvent("ocr:completed", {
+        detail: {
+          itemCount: ocrRows.length,
+          fileCount: validFiles.length
+        }
+      })
+    );
+  } catch (error) {
+    setWarning(`OCR error: ${error.message}`);
+    alert(`An error occurred while processing OCR: ${error.message}`);
+    goBackToUpload();
+  } finally {
+    if (worker) {
+      await worker.terminate();
+    }
+  }
+}
+
+function downloadExcel() {
+  if (!Array.isArray(ocrRows) || !ocrRows.length) {
+    alert("No OCR data available to download.");
+    return;
+  }
+
+  const sheetRows = ocrRows.map((row) => [
+    row.fileName,
+    row.page,
+    row.language,
+    Math.round(row.confidence),
+    row.characters,
+    row.fullText
+  ]);
+
+  const sheet = XLSX.utils.aoa_to_sheet([
+    ["File", "Page", "Language", "Confidence", "Characters", "OCR Text"],
+    ...sheetRows
+  ]);
+
+  sheet["!cols"] = [
+    { wch: 32 },
+    { wch: 8 },
+    { wch: 14 },
+    { wch: 12 },
+    { wch: 12 },
+    { wch: 110 }
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, sheet, "OCR Text");
+  const stamp = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(workbook, `redcore_ocr_export_${stamp}.xlsx`);
+}
+
+function wireEvents() {
+  if (!bindUi()) {
+    setTimeout(wireEvents, 80);
+    return;
+  }
+
+  initLanguageSelect();
+
+  ui.fileInput.addEventListener("change", (event) => {
+    processFiles(event.target.files);
+  });
+
+  ui.pickFileBtn.addEventListener("click", () => ui.fileInput.click());
+  ui.downloadBtn.addEventListener("click", downloadExcel);
+
+  if (ui.backToUploadBtn) {
+    ui.backToUploadBtn.addEventListener("click", goBackToUpload);
+  }
+
+  ui.uploadBox.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    ui.uploadBox.classList.add("dragover");
+  });
+
+  ui.uploadBox.addEventListener("dragleave", () => {
+    ui.uploadBox.classList.remove("dragover");
+  });
+
+  ui.uploadBox.addEventListener("drop", (event) => {
+    event.preventDefault();
+    ui.uploadBox.classList.remove("dragover");
+    processFiles(event.dataTransfer.files);
+  });
+}
+
+wireEvents();
