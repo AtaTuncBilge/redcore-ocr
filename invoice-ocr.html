@@ -3,35 +3,63 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redcore Invoice OCR</title>
+  <title>redcore ocr</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=alpha1">
+  <link rel="stylesheet" href="style.css?v=2.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="ocr-core.js?v=alpha1"></script>
+  <script src="ocr-core.js?v=2.0"></script>
 </head>
 <body>
   <div class="bg-grid"></div>
   <div class="bg-glow"></div>
 
-  <div class="app-shell" id="invoiceAppShell">
+  <!-- Auth Overlay -->
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-card">
+      <div class="auth-mark">
+        <span class="dot"></span>
+      </div>
+      <div class="auth-header">
+        <h2>Invoice Platform</h2>
+        <p>Please enter your username to continue to the Invoice OCR.</p>
+      </div>
+      <div class="auth-form">
+        <div class="form-group">
+          <label for="usernameInput">Username</label>
+          <input type="text" id="usernameInput" class="auth-input" placeholder="Enter your name..." autocomplete="off">
+        </div>
+        <div class="auth-actions">
+          <button class="btn btn-primary btn-block" id="loginBtn">Enter Invoice OCR</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-shell" id="invoiceAppShell" style="display:none;">
     <header class="site-header panel">
       <div class="site-brand">
         <div class="hero-mark">
           <a class="dot-link" href="./index.html" title="Back to main OCR" aria-label="Back to main OCR">
             <span class="dot"></span>
           </a>
-          <span class="brand">RED CORE OCR</span><span class="build-tag">invoice easter egg</span>
+          <span class="brand">RED CORE OCR</span><span class="build-tag">invoice v2.0</span>
         </div>
       </div>
       <nav class="site-nav" aria-label="Invoice menu">
         <a href="./index.html" class="site-link">Main OCR</a>
       </nav>
+      <div class="user-strip" id="userStrip" style="display:none;">
+        <span id="displayUsername"></span>
+        <button class="btn btn-secondary btn-compact" id="logoutBtn" style="border-radius: 999px; padding: 4px 10px; font-size: 0.7rem;">Exit</button>
+      </div>
     </header>
+
+
 
     <section class="hero-card panel" id="uploadSection">
       <div class="hero-content">
@@ -111,6 +139,6 @@
     </footer>
   </div>
 
-  <script src="invoice-app.js?v=alpha1" defer></script>
+  <script src="invoice-app.js?v=2.0" defer></script>
 </body>
 </html>

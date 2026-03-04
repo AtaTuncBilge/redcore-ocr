@@ -6,6 +6,16 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs
 let extractedData = [];
 
 const ui = {
+  // Auth elements
+  authOverlay: null,
+  usernameInput: null,
+  loginBtn: null,
+  appShell: null,
+  userStrip: null,
+  displayUsername: null,
+  logoutBtn: null,
+
+  // Invoice elements
   fileInput: null,
   pickFileBtn: null,
   uploadBox: null,
@@ -23,6 +33,14 @@ const ui = {
 };
 
 function bindUi() {
+  ui.authOverlay = document.getElementById("authOverlay");
+  ui.usernameInput = document.getElementById("usernameInput");
+  ui.loginBtn = document.getElementById("loginBtn");
+  ui.appShell = document.getElementById("invoiceAppShell");
+  ui.userStrip = document.getElementById("userStrip");
+  ui.displayUsername = document.getElementById("displayUsername");
+  ui.logoutBtn = document.getElementById("logoutBtn");
+
   ui.fileInput = document.getElementById("fileInput");
   ui.pickFileBtn = document.getElementById("pickFileBtn");
   ui.uploadBox = document.getElementById("uploadBox");
@@ -42,6 +60,42 @@ function bindUi() {
     ui.fileInput && ui.pickFileBtn && ui.uploadBox && ui.progressSection && ui.resultsSection &&
     ui.progressFill && ui.progressText && ui.resultsBody && ui.totalInvoices && ui.totalItems && ui.downloadBtn
   );
+}
+
+function handleAuth() {
+  const savedUser = localStorage.getItem("redcore_username");
+
+  const login = (username) => {
+    if (!username || username.trim().length < 2) {
+      alert("Please enter a valid username (min 2 chars).");
+      return;
+    }
+    localStorage.setItem("redcore_username", username.trim());
+    if (ui.authOverlay) ui.authOverlay.style.display = "none";
+    if (ui.appShell) ui.appShell.style.display = "block";
+    if (ui.userStrip) ui.userStrip.style.display = "inline-flex";
+    if (ui.displayUsername) ui.displayUsername.textContent = username.trim();
+  };
+
+  const logout = () => {
+    localStorage.removeItem("redcore_username");
+    location.reload();
+  };
+
+  if (savedUser) {
+    login(savedUser);
+  }
+
+  if (ui.loginBtn && ui.usernameInput) {
+    ui.loginBtn.addEventListener("click", () => login(ui.usernameInput.value));
+    ui.usernameInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") login(ui.usernameInput.value);
+    });
+  }
+
+  if (ui.logoutBtn) {
+    ui.logoutBtn.addEventListener("click", logout);
+  }
 }
 
 function deriveStabilityRate(progress) {
@@ -167,6 +221,15 @@ function displayResults() {
   });
 }
 
+async function createOcrWorker() {
+  const options = {
+    logger: m => console.log(m),
+    langPath: './lang-data'
+  };
+  const worker = await Tesseract.createWorker(options);
+  return worker;
+}
+
 async function extractInvoiceRowsFromFile(file, worker) {
   const buffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument(buffer).promise;
@@ -220,7 +283,7 @@ async function processFiles(files) {
 
   let worker;
   try {
-    worker = await Tesseract.createWorker();
+    worker = await createOcrWorker();
     updateProgress(10, "Loading OCR language: Turkish + English");
     await worker.loadLanguage("tur+eng");
     await worker.initialize("tur+eng");
@@ -295,6 +358,8 @@ function wireEvents() {
     return;
   }
 
+  handleAuth();
+
   ui.fileInput.addEventListener("change", (event) => {
     processFiles(event.target.files);
   });
@@ -323,3 +388,4 @@ function wireEvents() {
 }
 
 wireEvents();
+

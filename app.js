@@ -5,14 +5,15 @@ const MAX_PREVIEW_CHARS = 240;
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
 const LANGUAGE_CODES = [
-  "afr", "amh", "ara", "asm", "aze", "aze_cyrl", "bel", "ben", "bod", "bos",
-  "bre", "bul", "cat", "ceb", "ces", "chi_sim", "chi_tra", "chr", "cym", "dan",
-  "deu", "dzo", "ell", "eng", "enm", "epo", "est", "eus", "fao", "fas",
-  "fil", "fin", "fra", "frk", "frm", "gle", "glg", "grc", "guj", "hat",
-  "heb", "hin", "hrv", "hun", "hye", "iku", "ind", "isl", "ita", "ita_old",
-  "jav", "jpn", "kan", "kat", "kat_old", "kaz", "khm", "kir", "kmr", "kor",
-  "lao", "lat", "lav", "lit", "ltz", "mal", "mar", "mkd", "mlt", "mon",
-  "mri", "msa", "mya", "nep", "nld", "nor", "ori", "pan", "pol", "tur"
+  "eng", "tur", "deu", "fra", "ita", "spa", "por", "ara", "rus", "jpn", "kor",
+  "chi_sim", "chi_tra", "afr", "amh", "asm", "aze", "aze_cyrl", "bel", "ben",
+  "bod", "bos", "bre", "bul", "cat", "ceb", "ces", "chr", "cym", "dan",
+  "dzo", "ell", "enm", "epo", "est", "eus", "fao", "fas", "fil", "fin",
+  "frk", "frm", "gle", "glg", "grc", "guj", "hat", "heb", "hin", "hrv",
+  "hun", "hye", "iku", "ind", "isl", "ita_old", "jav", "kan", "kat", "kat_old",
+  "kaz", "khm", "kir", "kmr", "lao", "lat", "lav", "lit", "ltz", "mal",
+  "mar", "mkd", "mlt", "mon", "mri", "msa", "mya", "nep", "nld", "nor",
+  "ori", "pan", "pol"
 ];
 
 const LANGUAGE_LABELS = {
@@ -34,6 +35,16 @@ const LANGUAGE_LABELS = {
 let ocrRows = [];
 
 const ui = {
+  // Auth elements
+  authOverlay: null,
+  usernameInput: null,
+  loginBtn: null,
+  appShell: null,
+  userStrip: null,
+  displayUsername: null,
+  logoutBtn: null,
+
+  // Main OCR elements
   fileInput: null,
   pickFileBtn: null,
   uploadBox: null,
@@ -48,10 +59,22 @@ const ui = {
   warningBox: null,
   downloadBtn: null,
   backToUploadBtn: null,
-  languageSelect: null
+  languageSelect: null,
+
+  // Review elements
+  submitReviewBtn: null,
+  newReviewText: null
 };
 
 function bindUi() {
+  ui.authOverlay = document.getElementById("authOverlay");
+  ui.usernameInput = document.getElementById("usernameInput");
+  ui.loginBtn = document.getElementById("loginBtn");
+  ui.appShell = document.getElementById("appShell");
+  ui.userStrip = document.getElementById("userStrip");
+  ui.displayUsername = document.getElementById("displayUsername");
+  ui.logoutBtn = document.getElementById("logoutBtn");
+
   ui.fileInput = document.getElementById("fileInput");
   ui.pickFileBtn = document.getElementById("pickFileBtn");
   ui.uploadBox = document.getElementById("uploadBox");
@@ -68,11 +91,76 @@ function bindUi() {
   ui.backToUploadBtn = document.getElementById("backToUploadBtn");
   ui.languageSelect = document.getElementById("ocrLanguageSelect");
 
+  ui.submitReviewBtn = document.getElementById("submitReviewBtn");
+  ui.newReviewText = document.getElementById("newReviewText");
+
   return Boolean(
     ui.fileInput && ui.uploadBox && ui.progressSection && ui.resultsSection &&
-    ui.progressFill && ui.progressText && ui.resultsBody && ui.downloadBtn &&
-    ui.totalInvoices && ui.totalItems
+    ui.progressFill && ui.progressText && ui.resultsBody && ui.downloadBtn
   );
+}
+
+function handleAuth() {
+  const savedUser = localStorage.getItem("redcore_username");
+
+  const login = (username) => {
+    if (!username || username.trim().length < 2) {
+      alert("Please enter a valid username (min 2 chars).");
+      return;
+    }
+    localStorage.setItem("redcore_username", username.trim());
+    if (ui.authOverlay) ui.authOverlay.style.display = "none";
+    if (ui.appShell) ui.appShell.style.display = "block";
+    if (ui.userStrip) ui.userStrip.style.display = "inline-flex";
+    if (ui.displayUsername) ui.displayUsername.textContent = username.trim();
+  };
+
+  const logout = () => {
+    localStorage.removeItem("redcore_username");
+    location.reload();
+  };
+
+  if (savedUser) {
+    login(savedUser);
+  }
+
+  if (ui.loginBtn && ui.usernameInput) {
+    ui.loginBtn.addEventListener("click", () => login(ui.usernameInput.value));
+    ui.usernameInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") login(ui.usernameInput.value);
+    });
+  }
+
+  if (ui.logoutBtn) {
+    ui.logoutBtn.addEventListener("click", logout);
+  }
+}
+
+function initNavigation() {
+  document.querySelectorAll(".site-link").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+      const target = link.getAttribute("href");
+      if (!target || !target.startsWith("#")) {
+        return;
+      }
+      const element = document.querySelector(target);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  });
+}
+
+function initReviews() {
+  if (ui.submitReviewBtn && ui.newReviewText) {
+    ui.submitReviewBtn.addEventListener("click", () => {
+      const text = ui.newReviewText.value.trim();
+      if (!text) return;
+      alert("Review posted! (This is a prototype, review not saved to server).");
+      ui.newReviewText.value = "";
+    });
+  }
 }
 
 function titleCaseWord(word) {
@@ -248,6 +336,17 @@ function updateResultsTable() {
   });
 }
 
+async function createOcrWorker() {
+  // Use local langPath for trained data, fallback to CDN if needed
+  const options = {
+    logger: m => console.log(m),
+    langPath: './lang-data' // This points to our project folder
+  };
+  
+  const worker = await Tesseract.createWorker(options);
+  return worker;
+}
+
 async function processFiles(files) {
   const validFiles = sanitizeFiles(files);
   if (!validFiles.length) {
@@ -276,7 +375,7 @@ async function processFiles(files) {
 
   let worker;
   try {
-    worker = await Tesseract.createWorker();
+    worker = await createOcrWorker();
     updateProgress(10, `Loading OCR language: ${selectedLanguageLabel}`);
     await worker.loadLanguage(selectedLanguage);
     await worker.initialize(selectedLanguage);
@@ -400,7 +499,10 @@ function wireEvents() {
     return;
   }
 
+  handleAuth();
+  initNavigation();
   initLanguageSelect();
+  initReviews();
 
   ui.fileInput.addEventListener("change", (event) => {
     processFiles(event.target.files);
@@ -430,3 +532,4 @@ function wireEvents() {
 }
 
 wireEvents();
+
