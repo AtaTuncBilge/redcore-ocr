@@ -339,12 +339,36 @@ function addSimulationWord(word) {
 }
 
 async function detectLanguage(worker, canvas) {
-  // Try common languages first to detect script
-  await worker.loadLanguage('eng+tur+fra+deu+spa');
-  await worker.initialize('eng+tur+fra+deu+spa');
-  const result = await worker.detect(canvas);
-  // Default to English if detection is uncertain
-  return result.data.script || 'eng';
+  // Use eng+tur as primary languages — covers most use cases.
+  // Run a quick low-res recognize to infer dominant language from character patterns.
+  const defaultLang = 'eng+tur';
+  try {
+    await worker.loadLanguage(defaultLang);
+    await worker.initialize(defaultLang);
+    // Quick sample OCR on a cropped region to detect script
+    const sampleCanvas = document.createElement('canvas');
+    const sH = Math.min(canvas.height, 400);
+    sampleCanvas.width = canvas.width;
+    sampleCanvas.height = sH;
+    const sCtx = sampleCanvas.getContext('2d');
+    sCtx.drawImage(canvas, 0, 0, canvas.width, sH, 0, 0, canvas.width, sH);
+    const { data } = await worker.recognize(sampleCanvas);
+    sampleCanvas.width = 0; // release memory
+    // Check for Turkish-specific characters
+    const turkishPattern = /[çğıöşüÇĞİÖŞÜ]/;
+    if (turkishPattern.test(data.text)) {
+      return 'tur';
+    }
+    return 'eng';
+  } catch (e) {
+    console.warn('Language detection fallback:', e.message);
+    // Fallback: just load both and let Tesseract figure it out
+    try {
+      await worker.loadLanguage(defaultLang);
+      await worker.initialize(defaultLang);
+    } catch (_) { /* already loaded */ }
+    return defaultLang;
+  }
 }
 
 async function processFiles(files) {
@@ -388,9 +412,12 @@ async function processFiles(files) {
         updateProgress(10, `Auto-detecting language...`);
         const lang = await detectLanguage(worker, canvas);
         if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(lang);
-        
-        await worker.loadLanguage(lang);
-        await worker.initialize(lang);
+
+        // Re-initialize with detected language if it differs from eng+tur combo
+        if (lang !== 'eng+tur') {
+          await worker.loadLanguage(lang);
+          await worker.initialize(lang);
+        }
         
         const { data } = await worker.recognize(canvas);
         
