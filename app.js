@@ -395,11 +395,11 @@ async function processFiles(files) {
         const { data } = await worker.recognize(canvas);
         
         // Simulation: Add words with delay for "fading in" effect
-        if (data.words) {
+        if (data.words && isProcessing) {
           for (let i = 0; i < data.words.length; i++) {
             if (!isProcessing) break;
             addSimulationWord(data.words[i]);
-            if (i % 5 === 0) await new Promise(r => setTimeout(r, 10));
+            if (i % 8 === 0) await new Promise(r => setTimeout(r, 5));
           }
         }
 

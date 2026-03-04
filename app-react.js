@@ -24,7 +24,7 @@
                   <input type="text" id="usernameInput" class="auth-input" placeholder="Enter your name..." autocomplete="off">
                 </div>
                 <div class="auth-actions">
-                  <button class="btn btn-primary btn-block" id="loginBtn">Enter Platform</button>
+                  <button class="btn btn-primary btn-block" id="loginBtn">enter platform</button>
                 </div>
               </div>
             </div>
@@ -35,7 +35,7 @@
               <div class="site-brand">
                 <div class="hero-mark">
                   <span class="dot"></span>
-                  <span class="brand">RED CORE OCR</span><span class="build-tag">v2.1</span>
+                  <span class="brand">redcore ocr</span><span class="build-tag">v2.2</span>
                 </div>
               </div>
               <nav class="site-nav" aria-label="Main menu">
@@ -51,7 +51,7 @@
 
             <section class="hero-card panel reveal-up delay-1" id="uploadSection">
               <div class="hero-content">
-                <h1>REDCORE OCR<a href="./invoice-ocr.html" class="dot-link-hero" title="Secret Invoice OCR" style="text-decoration:none; margin-left:10px;"><span class="dot"></span></a></h1>
+                <h1>redcore ocr<a href="./invoice-ocr.html" class="dot-link-hero" title="Secret Invoice OCR" style="text-decoration:none; margin-left:10px;"><span class="dot"></span></a></h1>
                 <p class="subtitle">Advanced OCR with automatic language detection. Now supports PDF and Images.</p>
                 <div class="hero-stats">
                   <span>Auto-Language</span>
