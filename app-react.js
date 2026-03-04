@@ -35,28 +35,28 @@
               <div class="site-brand">
                 <div class="hero-mark">
                   <span class="dot"></span>
-                  <span class="brand">redcore ocr</span><span class="build-tag">v2.2</span>
+                  <span class="brand">REDCORE-OCR</span><span class="build-tag">v2.3</span>
                 </div>
               </div>
               <nav class="site-nav" aria-label="Main menu">
-                <a href="#uploadSection" class="site-link">Upload</a>
-                <a href="#resultsSectionAnchor" class="site-link">Results</a>
-                <a href="#reviewsSection" class="site-link">Reviews</a>
+                <a href="#uploadSection" class="site-link">upload</a>
+                <a href="#resultsSectionAnchor" class="site-link">results</a>
+                <a href="#reviewsSection" class="site-link">reviews</a>
               </nav>
               <div class="user-strip" id="userStrip" style="display:none;">
                 <span id="displayUsername"></span>
-                <button class="btn btn-secondary btn-compact" id="logoutBtn" style="border-radius: 999px; padding: 4px 10px; font-size: 0.7rem;">Exit</button>
+                <button class="btn btn-secondary btn-compact" id="logoutBtn" style="border-radius: 999px; padding: 4px 10px; font-size: 0.7rem;">exit</button>
               </div>
             </header>
 
             <section class="hero-card panel reveal-up delay-1" id="uploadSection">
               <div class="hero-content">
-                <h1>redcore ocr<a href="./invoice-ocr.html" class="dot-link-hero" title="Secret Invoice OCR" style="text-decoration:none; margin-left:10px;"><span class="dot"></span></a></h1>
-                <p class="subtitle">Advanced OCR with automatic language detection. Now supports PDF and Images.</p>
+                <h1>REDCORE-OCR<a href="./invoice-ocr.html" class="dot-link-hero" title="Secret Invoice OCR" style="text-decoration:none; margin-left:10px;"><span class="dot"></span></a></h1>
+                <p class="subtitle">Advanced universal OCR. Instant recognition for PDF and Images.</p>
                 <div class="hero-stats">
-                  <span>Auto-Language</span>
-                  <span>PDF + Images</span>
-                  <span>Real-Time Simulation</span>
+                  <span>auto-language</span>
+                  <span>pdf + images</span>
+                  <span>real-time simulation</span>
                 </div>
               </div>
             </section>
@@ -64,11 +64,11 @@
             <main class="main-stack">
               <section class="panel upload-section reveal-up delay-2">
                 <div class="upload-box" id="uploadBox">
-                  <div class="upload-chip">UNIVERSAL OCR</div>
-                  <h2>Upload Files</h2>
-                  <p>Drop PDF or Image files (JPG, PNG). Language is detected automatically.</p>
+                  <div class="upload-chip">universal ocr</div>
+                  <h2>upload files</h2>
+                  <p>Drop PDF or Image files. Language detected automatically.</p>
                   <input type="file" id="fileInput" accept=".pdf,image/*" multiple hidden>
-                  <button class="btn btn-primary" id="pickFileBtn" type="button">Select Files</button>
+                  <button class="btn btn-primary" id="pickFileBtn" type="button">select files</button>
                 </div>
               </section>
 

@@ -417,15 +417,30 @@ async function processFiles(files) {
 
     updateResultsTable();
     updateProgress(100, "OCR completed.");
+    
+    // Hide progress, show results
     if (ui.progressSection) ui.progressSection.style.display = "none";
     if (ui.resultsSection) ui.resultsSection.style.display = "block";
+    
+    // Dispatch completion event
+    window.dispatchEvent(new CustomEvent("ocr:completed", { detail: { count: ocrRows.length } }));
+
   } catch (error) {
-    console.error(error);
-    setWarning(`OCR error: ${error.message}`);
-    goBackToUpload();
+    console.error("OCR Process Error:", error);
+    if (isProcessing) {
+      setWarning(`OCR error: ${error.message}`);
+      alert(`Processing error: ${error.message}`);
+      goBackToUpload();
+    }
   } finally {
     isProcessing = false;
-    if (worker) await worker.terminate();
+    if (worker) {
+      try {
+        await worker.terminate();
+      } catch (e) {
+        console.warn("Worker termination error:", e);
+      }
+    }
   }
 }
 
