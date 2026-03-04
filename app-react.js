@@ -204,6 +204,12 @@
             </main>
 
             <footer class="site-footer site-footer-min reveal-up delay-3">
+              <div class="footer-links">
+                <a href="./privacy.html" class="footer-link">privacy</a>
+                <a href="./terms.html" class="footer-link">terms</a>
+                <a href="./about.html" class="footer-link">about</a>
+                <a href="./contact.html" class="footer-link">contact</a>
+              </div>
               <p>redcore-ocr.cloud &mdash; made by red person</p>
             </footer>
           </div>

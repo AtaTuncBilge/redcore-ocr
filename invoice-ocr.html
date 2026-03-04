@@ -3,91 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>redcore ocr</title>
+  <title>invoice ocr — redcore</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=2.0">
+  <link rel="stylesheet" href="style.css?v=2.5">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="ocr-core.js?v=2.0"></script>
+  <script src="ocr-core.js?v=2.5"></script>
 </head>
 <body>
+  <div class="bg-base-gradient"></div>
+  <div class="bg-noise"></div>
+  <div class="bg-blob-container">
+    <div class="bg-blob bg-blob--primary"></div>
+    <div class="bg-blob bg-blob--secondary"></div>
+    <div class="bg-blob bg-blob--tertiary"></div>
+    <div class="bg-blob bg-blob--bottom"></div>
+  </div>
   <div class="bg-grid"></div>
-  <div class="bg-glow"></div>
 
-  <!-- Auth Overlay -->
   <div class="auth-overlay" id="authOverlay">
     <div class="auth-card">
-      <div class="auth-mark">
-        <span class="dot"></span>
-      </div>
+      <div class="auth-mark"><span class="dot"></span></div>
       <div class="auth-header">
         <h2>Invoice Platform</h2>
-        <p>Please enter your username to continue to the Invoice OCR.</p>
+        <p>Enter your username to access Invoice OCR.</p>
       </div>
       <div class="auth-form">
         <div class="form-group">
-          <label for="usernameInput">Username</label>
+          <label for="usernameInput">username</label>
           <input type="text" id="usernameInput" class="auth-input" placeholder="Enter your name..." autocomplete="off">
         </div>
         <div class="auth-actions">
-          <button class="btn btn-primary btn-block" id="loginBtn">Enter Invoice OCR</button>
+          <button class="btn btn-primary btn-block" id="loginBtn">enter invoice ocr</button>
         </div>
       </div>
     </div>
   </div>
 
   <div class="app-shell" id="invoiceAppShell" style="display:none;">
-    <header class="site-header panel">
+    <header class="site-header reveal-up">
       <div class="site-brand">
         <div class="hero-mark">
-          <a class="dot-link" href="./index.html" title="Back to main OCR" aria-label="Back to main OCR">
-            <span class="dot"></span>
-          </a>
-          <span class="brand">redcore ocr</span><span class="build-tag">invoice v2.2</span>
+          <a href="./index.html" style="text-decoration:none;display:inline-flex;"><span class="dot"></span></a>
+          <span class="brand">redcore-ocr</span>
+          <span class="build-tag">invoice v2.5</span>
         </div>
       </div>
       <nav class="site-nav" aria-label="Invoice menu">
-        <a href="./index.html" class="site-link">Main OCR</a>
+        <a href="./index.html" class="site-link">main ocr</a>
+        <a href="./about.html" class="site-link">about</a>
       </nav>
       <div class="user-strip" id="userStrip" style="display:none;">
         <span id="displayUsername"></span>
-        <button class="btn btn-secondary btn-compact" id="logoutBtn" style="border-radius: 999px; padding: 4px 10px; font-size: 0.7rem;">Exit</button>
+        <button class="btn btn-secondary btn-compact" id="logoutBtn">exit</button>
       </div>
     </header>
 
-
-
-    <section class="hero-card panel" id="uploadSection">
+    <section class="hero-card panel reveal-up delay-1" id="uploadSection">
       <div class="hero-content">
         <h1>Invoice OCR</h1>
         <p class="subtitle">Extract invoice line items and export them as Excel.</p>
         <div class="hero-stats">
-          <span>Invoice Parser</span>
-          <span>Turkish + English OCR</span>
-          <span>Excel Export</span>
+          <span>invoice parser</span>
+          <span>turkish + english</span>
+          <span>excel export</span>
         </div>
       </div>
     </section>
 
     <main class="main-stack">
-      <section class="panel upload-section">
+      <section class="panel upload-section reveal-up delay-2">
         <div class="upload-box" id="uploadBox">
-          <div class="upload-chip">PDF + Invoice OCR</div>
-          <h2>Upload Invoice PDFs</h2>
+          <div class="upload-chip">pdf invoice ocr</div>
+          <h2>upload invoice PDFs</h2>
           <p>Drop or select PDF invoices. The parser extracts matched line items.</p>
           <input type="file" id="fileInput" accept=".pdf" multiple hidden>
-          <button class="btn btn-primary" id="pickFileBtn" type="button">Select PDF</button>
+          <button class="btn btn-primary" id="pickFileBtn" type="button">select pdf</button>
         </div>
       </section>
 
       <section class="panel progress-section" id="progressSection" style="display:none;">
         <div class="progress-top">
-          <h3>Invoice OCR Processing</h3>
-          <button class="btn btn-secondary btn-compact" id="backToUploadBtn" type="button">Go Back</button>
+          <h3>invoice ocr processing</h3>
+          <button class="btn btn-secondary btn-compact" id="backToUploadBtn" type="button">go back</button>
         </div>
         <p class="progress-copy" id="progressText">Preparing...</p>
         <div class="progress-bar">
@@ -102,43 +104,47 @@
       <section class="panel results-section" id="resultsSection" style="display:none;">
         <div class="results-header">
           <div>
-            <h2>Extracted Invoice Line Items</h2>
-            <p>Detected line items are listed below and can be exported.</p>
+            <h2>extracted invoice line items</h2>
+            <p>Detected line items listed below. Export to Excel.</p>
           </div>
           <div class="stats">
-            <div class="stat-pill"><span id="totalInvoices">0</span> Invoices</div>
-            <div class="stat-pill"><span id="totalItems">0</span> Items</div>
+            <div class="stat-pill"><span id="totalInvoices">0</span> invoices</div>
+            <div class="stat-pill"><span id="totalItems">0</span> items</div>
           </div>
         </div>
-
         <div id="warningBox" class="warning-box" style="display:none;"></div>
         <div class="table-wrap">
           <table id="resultsTable">
             <thead>
               <tr>
-                <th>Invoice Date</th>
-                <th>Invoice No</th>
-                <th>Product Description</th>
-                <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>Total</th>
+                <th>invoice date</th>
+                <th>invoice no</th>
+                <th>product description</th>
+                <th>quantity</th>
+                <th>unit price</th>
+                <th>total</th>
               </tr>
             </thead>
             <tbody id="resultsBody"></tbody>
           </table>
         </div>
-
         <div class="actions">
-          <button class="btn btn-success" id="downloadBtn" type="button">Download Excel</button>
+          <button class="btn btn-success" id="downloadBtn" type="button">download excel</button>
         </div>
       </section>
     </main>
 
-    <footer class="site-footer panel site-footer-min">
-      <p>redcore-ocr made by red person</p>
+    <footer class="site-footer site-footer-min reveal-up delay-3">
+      <div class="footer-links">
+        <a href="./privacy.html" class="footer-link">privacy</a>
+        <a href="./terms.html" class="footer-link">terms</a>
+        <a href="./about.html" class="footer-link">about</a>
+        <a href="./contact.html" class="footer-link">contact</a>
+      </div>
+      <p>redcore-ocr &mdash; made by red person</p>
     </footer>
   </div>
 
-  <script src="invoice-app.js?v=2.0" defer></script>
+  <script src="invoice-app.js?v=2.5" defer></script>
 </body>
 </html>

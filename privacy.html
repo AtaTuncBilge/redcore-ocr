@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>privacy — redcore ocr</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2.5">
+</head>
+<body>
+  <div class="bg-base-gradient"></div>
+  <div class="bg-noise"></div>
+  <div class="bg-blob-container">
+    <div class="bg-blob bg-blob--primary"></div>
+    <div class="bg-blob bg-blob--secondary"></div>
+    <div class="bg-blob bg-blob--tertiary"></div>
+  </div>
+  <div class="bg-grid"></div>
+
+  <div class="app-shell">
+    <header class="site-header reveal-up">
+      <div class="site-brand">
+        <a href="./index.html" class="hero-mark" style="text-decoration:none;">
+          <span class="dot"></span>
+          <span class="brand">redcore-ocr</span>
+        </a>
+      </div>
+      <nav class="site-nav" aria-label="Page navigation">
+        <a href="./index.html" class="site-link">home</a>
+        <a href="./about.html" class="site-link">about</a>
+        <a href="./contact.html" class="site-link">contact</a>
+      </nav>
+    </header>
+
+    <main class="page-content reveal-up delay-1">
+      <div class="panel page-panel">
+        <div class="page-heading">
+          <svg class="page-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            <circle cx="12" cy="16" r="1"/>
+          </svg>
+          <h1>privacy</h1>
+        </div>
+        <p class="page-updated">last updated: march 2026</p>
+
+        <div class="page-body">
+          <h2>the short version</h2>
+          <p>This is literally a static page that runs in your browser's RAM. Your files never leave your device. There's no server processing, no uploads, nothing phoning home.</p>
+
+          <h2>what we don't do</h2>
+          <ul>
+            <li>No user accounts. You type a name to use the tool, it's stored in your browser's localStorage. That's it.</li>
+            <li>No personal data collection. We don't collect, store, or process any personal information.</li>
+            <li>No selling or sharing data. There's nothing to sell. We have no data.</li>
+            <li>No tracking beyond basic analytics. If analytics are present, it's just page view counts — no fingerprinting, no cookies tracking you around the web.</li>
+          </ul>
+
+          <h2>how the OCR works</h2>
+          <p>When you upload a PDF or image, the OCR engine (Tesseract.js) runs entirely inside your browser tab. The file is read into memory, processed locally, and the results are displayed on screen. Nothing is sent to any server.</p>
+          <p>When you close the tab, everything is gone.</p>
+
+          <h2>third-party services</h2>
+          <p>We load fonts from Google Fonts and libraries from CDNs (pdf.js, tesseract.js, xlsx). These services may log standard request data like IP addresses as part of their own privacy policies. We have no control over that.</p>
+
+          <h2>changes</h2>
+          <p>If this policy ever changes, it'll be updated here. But honestly, the whole point of this tool is that it runs locally — that's unlikely to change.</p>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer site-footer-min reveal-up delay-2">
+      <div class="footer-links">
+        <a href="./privacy.html" class="footer-link">privacy</a>
+        <a href="./terms.html" class="footer-link">terms</a>
+        <a href="./about.html" class="footer-link">about</a>
+        <a href="./contact.html" class="footer-link">contact</a>
+      </div>
+      <p>redcore-ocr &mdash; made by red person</p>
+    </footer>
+  </div>
+</body>
+</html>

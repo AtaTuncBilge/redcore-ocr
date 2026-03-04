@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>about — redcore ocr</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2.5">
+</head>
+<body>
+  <div class="bg-base-gradient"></div>
+  <div class="bg-noise"></div>
+  <div class="bg-blob-container">
+    <div class="bg-blob bg-blob--primary"></div>
+    <div class="bg-blob bg-blob--secondary"></div>
+    <div class="bg-blob bg-blob--tertiary"></div>
+  </div>
+  <div class="bg-grid"></div>
+
+  <div class="app-shell">
+    <header class="site-header reveal-up">
+      <div class="site-brand">
+        <a href="./index.html" class="hero-mark" style="text-decoration:none;">
+          <span class="dot"></span>
+          <span class="brand">redcore-ocr</span>
+        </a>
+      </div>
+      <nav class="site-nav" aria-label="Page navigation">
+        <a href="./index.html" class="site-link">home</a>
+        <a href="./privacy.html" class="site-link">privacy</a>
+        <a href="./contact.html" class="site-link">contact</a>
+      </nav>
+    </header>
+
+    <main class="page-content reveal-up delay-1">
+      <div class="panel page-panel">
+        <div class="page-heading">
+          <svg class="page-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <h1>about</h1>
+        </div>
+
+        <div class="page-body">
+          <h2>who's behind this</h2>
+          <p>Hey. I'm a system trainee working in IT. Not a senior dev, not a startup founder — just someone who likes building things and figuring stuff out.</p>
+          <p>I also make content on YouTube about keyboards, gaming, and tech in general. If you're into that sort of thing:</p>
+          <a href="https://www.youtube.com/@redpersonn" target="_blank" rel="noopener noreferrer" class="about-yt-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+            @redpersonn
+          </a>
+
+          <h2>how this started</h2>
+          <p>At work, we had a bunch of invoice PDFs that needed data extracted — product descriptions, prices, quantities, that kind of thing. Doing it manually was slow and painful.</p>
+          <p>So I started experimenting with Tesseract.js to see if I could automate it. First it was just a messy script, then it became a basic tool, and eventually it turned into what you see here.</p>
+          <p>The whole thing runs client-side because that was the simplest approach — no server to maintain, no data to worry about, just open the page and go.</p>
+
+          <h2>the tool</h2>
+          <p>Redcore OCR is a browser-based OCR tool. You upload a PDF or image, it runs text recognition locally using Tesseract.js, and gives you the results. There's also an invoice-specific mode that tries to parse line items from Turkish invoices.</p>
+          <p>It's not perfect, but it works pretty well for what it does. And it's free.</p>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer site-footer-min reveal-up delay-2">
+      <div class="footer-links">
+        <a href="./privacy.html" class="footer-link">privacy</a>
+        <a href="./terms.html" class="footer-link">terms</a>
+        <a href="./about.html" class="footer-link">about</a>
+        <a href="./contact.html" class="footer-link">contact</a>
+      </div>
+      <p>redcore-ocr &mdash; made by red person</p>
+    </footer>
+  </div>
+</body>
+</html>

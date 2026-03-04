@@ -17,14 +17,14 @@ const LANGUAGE_LABELS = {
   jpn: "Japanese",
   kor: "Korean",
   chi_sim: "Chinese (Simplified)",
-  chi_tra: "Chinese (Traditional)"
+  chi_tra: "Chinese (Traditional)",
+  "eng+tur": "English + Turkish"
 };
 
 let ocrRows = [];
 let isProcessing = false;
 
 const ui = {
-  // Auth elements
   authOverlay: null,
   usernameInput: null,
   loginBtn: null,
@@ -32,8 +32,6 @@ const ui = {
   userStrip: null,
   displayUsername: null,
   logoutBtn: null,
-
-  // Main OCR elements
   fileInput: null,
   pickFileBtn: null,
   uploadBox: null,
@@ -49,15 +47,12 @@ const ui = {
   downloadBtn: null,
   backToUploadBtn: null,
   detectedLang: null,
-
-  // Simulation elements
   simulationContainer: null,
   simulationCanvas: null,
   simulationOverlay: null,
-
-  // Review elements
   submitReviewBtn: null,
-  newReviewText: null
+  newReviewText: null,
+  starRating: null
 };
 
 function bindUi() {
@@ -91,6 +86,7 @@ function bindUi() {
 
   ui.submitReviewBtn = document.getElementById("submitReviewBtn");
   ui.newReviewText = document.getElementById("newReviewText");
+  ui.starRating = document.getElementById("starRating");
 
   return Boolean(
     ui.fileInput && ui.uploadBox && ui.progressSection && ui.resultsSection &&
@@ -139,9 +135,7 @@ function initNavigation() {
     link.addEventListener("click", (event) => {
       event.preventDefault();
       const target = link.getAttribute("href");
-      if (!target || !target.startsWith("#")) {
-        return;
-      }
+      if (!target || !target.startsWith("#")) return;
       const element = document.querySelector(target);
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -150,22 +144,68 @@ function initNavigation() {
   });
 }
 
+function initStarRating() {
+  if (!ui.starRating) return;
+  const stars = ui.starRating.querySelectorAll(".star-btn");
+  let selectedRating = 0;
+
+  stars.forEach((star) => {
+    star.addEventListener("click", () => {
+      selectedRating = parseInt(star.dataset.value, 10);
+      stars.forEach((s) => {
+        const val = parseInt(s.dataset.value, 10);
+        s.classList.toggle("active", val <= selectedRating);
+      });
+    });
+
+    star.addEventListener("mouseenter", () => {
+      const hoverVal = parseInt(star.dataset.value, 10);
+      stars.forEach((s) => {
+        const val = parseInt(s.dataset.value, 10);
+        s.classList.toggle("hovered", val <= hoverVal);
+      });
+    });
+
+    star.addEventListener("mouseleave", () => {
+      stars.forEach((s) => s.classList.remove("hovered"));
+    });
+  });
+
+  // Expose for review submission
+  ui.starRating._getSelected = () => selectedRating;
+  ui.starRating._reset = () => {
+    selectedRating = 0;
+    stars.forEach((s) => { s.classList.remove("active"); s.classList.remove("hovered"); });
+  };
+}
+
 function initReviews() {
   if (ui.submitReviewBtn && ui.newReviewText) {
     ui.submitReviewBtn.addEventListener("click", () => {
       const text = ui.newReviewText.value.trim();
+      const rating = ui.starRating ? ui.starRating._getSelected() : 0;
       if (!text) return;
-      alert("Review posted! (This is a prototype, review not saved to server).");
+      if (rating === 0) {
+        alert("Please select a star rating.");
+        return;
+      }
+      alert("Review posted! (Prototype — review not saved to server).");
       ui.newReviewText.value = "";
+      if (ui.starRating && ui.starRating._reset) ui.starRating._reset();
     });
   }
 }
 
 function languageLabel(code) {
-  if (LANGUAGE_LABELS[code]) {
-    return `${LANGUAGE_LABELS[code]} (${code})`;
-  }
+  if (LANGUAGE_LABELS[code]) return LANGUAGE_LABELS[code];
   return code.toUpperCase();
+}
+
+function inferLanguage(text) {
+  // Check for Turkish-specific chars in the OCR output
+  const turkishPattern = /[çğıöşüÇĞİÖŞÜ]/;
+  if (turkishPattern.test(text)) return "tur";
+  return "eng";
 }
 
 function deriveStabilityRate(progress) {
@@ -296,26 +336,14 @@ function updateResultsTable() {
   });
 }
 
-async function createOcrWorker() {
-  const options = {
-    logger: m => {
-      if (m.status === "recognizing text") {
-        updateProgress(m.progress * 100, `Simulating OCR: ${Math.round(m.progress * 100)}%`);
-      }
-    },
-    langPath: './lang-data'
-  };
-  return await Tesseract.createWorker(options);
-}
-
 function startSimulation(canvas) {
   if (!ui.simulationCanvas || !ui.simulationOverlay) return;
-  
+
   const ctx = ui.simulationCanvas.getContext('2d');
   ui.simulationCanvas.width = canvas.width;
   ui.simulationCanvas.height = canvas.height;
   ctx.drawImage(canvas, 0, 0);
-  
+
   ui.simulationOverlay.innerHTML = "";
   ui.simulationOverlay.style.width = `${ui.simulationCanvas.clientWidth}px`;
   ui.simulationOverlay.style.height = `${ui.simulationCanvas.clientHeight}px`;
@@ -323,52 +351,19 @@ function startSimulation(canvas) {
 
 function addSimulationWord(word) {
   if (!ui.simulationOverlay || !ui.simulationCanvas) return;
-  
+
   const span = document.createElement("span");
   span.className = "sim-word";
   span.textContent = word.text;
-  
+
   const scaleX = ui.simulationCanvas.clientWidth / ui.simulationCanvas.width;
   const scaleY = ui.simulationCanvas.clientHeight / ui.simulationCanvas.height;
-  
+
   span.style.left = `${word.bbox.x0 * scaleX}px`;
   span.style.top = `${word.bbox.y0 * scaleY}px`;
   span.style.fontSize = `${(word.bbox.y1 - word.bbox.y0) * scaleY}px`;
-  
-  ui.simulationOverlay.appendChild(span);
-}
 
-async function detectLanguage(worker, canvas) {
-  // Use eng+tur as primary languages — covers most use cases.
-  // Run a quick low-res recognize to infer dominant language from character patterns.
-  const defaultLang = 'eng+tur';
-  try {
-    await worker.loadLanguage(defaultLang);
-    await worker.initialize(defaultLang);
-    // Quick sample OCR on a cropped region to detect script
-    const sampleCanvas = document.createElement('canvas');
-    const sH = Math.min(canvas.height, 400);
-    sampleCanvas.width = canvas.width;
-    sampleCanvas.height = sH;
-    const sCtx = sampleCanvas.getContext('2d');
-    sCtx.drawImage(canvas, 0, 0, canvas.width, sH, 0, 0, canvas.width, sH);
-    const { data } = await worker.recognize(sampleCanvas);
-    sampleCanvas.width = 0; // release memory
-    // Check for Turkish-specific characters
-    const turkishPattern = /[çğıöşüÇĞİÖŞÜ]/;
-    if (turkishPattern.test(data.text)) {
-      return 'tur';
-    }
-    return 'eng';
-  } catch (e) {
-    console.warn('Language detection fallback:', e.message);
-    // Fallback: just load both and let Tesseract figure it out
-    try {
-      await worker.loadLanguage(defaultLang);
-      await worker.initialize(defaultLang);
-    } catch (_) { /* already loaded */ }
-    return defaultLang;
-  }
+  ui.simulationOverlay.appendChild(span);
 }
 
 async function processFiles(files) {
@@ -386,12 +381,28 @@ async function processFiles(files) {
 
   let worker;
   try {
-    worker = await createOcrWorker();
-    
+    updateProgress(5, "Initializing OCR engine...");
+
+    // Tesseract.js 4.x: createWorker(langs, oem, options)
+    // OEM 1 = LSTM only (best accuracy)
+    worker = await Tesseract.createWorker("eng+tur", 1, {
+      langPath: './lang-data',
+      logger: function (m) {
+        if (m.status === "recognizing text") {
+          updateProgress(
+            20 + Math.round(m.progress * 60),
+            "Running OCR: " + Math.round(m.progress * 100) + "%"
+          );
+        }
+      }
+    });
+
+    if (ui.detectedLang) ui.detectedLang.textContent = "English + Turkish";
+
     for (let fileIndex = 0; fileIndex < validFiles.length; fileIndex++) {
       const file = validFiles[fileIndex];
-      updateProgress(5, `Analyzing ${file.name}...`);
-      
+      updateProgress(10, "Loading " + file.name + "...");
+
       let pages = [];
       if (file.type === "application/pdf") {
         const buffer = await file.arrayBuffer();
@@ -408,32 +419,29 @@ async function processFiles(files) {
       for (let pIdx = 0; pIdx < pages.length; pIdx++) {
         const canvas = pages[pIdx];
         startSimulation(canvas);
-        
-        updateProgress(10, `Auto-detecting language...`);
-        const lang = await detectLanguage(worker, canvas);
+
+        updateProgress(15, "OCR page " + (pIdx + 1) + "/" + pages.length + "...");
+
+        var result = await worker.recognize(canvas);
+        var data = result.data;
+
+        // Infer dominant language from output (for display only)
+        var lang = inferLanguage(data.text);
         if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(lang);
 
-        // Re-initialize with detected language if it differs from eng+tur combo
-        if (lang !== 'eng+tur') {
-          await worker.loadLanguage(lang);
-          await worker.initialize(lang);
-        }
-        
-        const { data } = await worker.recognize(canvas);
-        
-        // Simulation: Add words with delay for "fading in" effect
+        // Simulation: Add words with slight delay for visual effect
         if (data.words && isProcessing) {
           for (let i = 0; i < data.words.length; i++) {
             if (!isProcessing) break;
             addSimulationWord(data.words[i]);
-            if (i % 8 === 0) await new Promise(r => setTimeout(r, 5));
+            if (i % 8 === 0) await new Promise(function (r) { setTimeout(r, 5); });
           }
         }
 
         ocrRows.push({
           fileName: file.name,
           page: pIdx + 1,
-          language: lang,
+          language: languageLabel(lang),
           confidence: data.confidence,
           characters: data.text.trim().length,
           preview: textPreview(data.text),
@@ -444,19 +452,18 @@ async function processFiles(files) {
 
     updateResultsTable();
     updateProgress(100, "OCR completed.");
-    
-    // Hide progress, show results
+
     if (ui.progressSection) ui.progressSection.style.display = "none";
     if (ui.resultsSection) ui.resultsSection.style.display = "block";
-    
-    // Dispatch completion event
+
     window.dispatchEvent(new CustomEvent("ocr:completed", { detail: { count: ocrRows.length } }));
 
   } catch (error) {
+    var errMsg = (error && error.message) ? error.message : String(error || "Unknown error");
     console.error("OCR Process Error:", error);
     if (isProcessing) {
-      setWarning(`OCR error: ${error.message}`);
-      alert(`Processing error: ${error.message}`);
+      setWarning("OCR error: " + errMsg);
+      alert("Processing error: " + errMsg);
       goBackToUpload();
     }
   } finally {
@@ -477,25 +484,24 @@ function downloadExcel() {
   const sheet = XLSX.utils.aoa_to_sheet([["File", "Page", "Language", "Confidence", "Characters", "OCR Text"], ...sheetRows]);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, sheet, "OCR Text");
-  XLSX.writeFile(workbook, `redcore_ocr_export_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  XLSX.writeFile(workbook, "redcore_ocr_export_" + new Date().toISOString().slice(0, 10) + ".xlsx");
 }
 
 function wireEvents() {
   if (!bindUi()) { setTimeout(wireEvents, 80); return; }
   handleAuth();
   initNavigation();
+  initStarRating();
   initReviews();
 
-  ui.fileInput.addEventListener("change", (e) => processFiles(e.target.files));
-  ui.pickFileBtn.addEventListener("click", () => ui.fileInput.click());
+  ui.fileInput.addEventListener("change", function (e) { processFiles(e.target.files); });
+  ui.pickFileBtn.addEventListener("click", function () { ui.fileInput.click(); });
   ui.downloadBtn.addEventListener("click", downloadExcel);
   if (ui.backToUploadBtn) ui.backToUploadBtn.addEventListener("click", goBackToUpload);
 
-  ui.uploadBox.addEventListener("dragover", (e) => { e.preventDefault(); ui.uploadBox.classList.add("dragover"); });
-  ui.uploadBox.addEventListener("dragleave", () => ui.uploadBox.classList.remove("dragover"));
-  ui.uploadBox.addEventListener("drop", (e) => { e.preventDefault(); ui.uploadBox.classList.remove("dragover"); processFiles(e.dataTransfer.files); });
+  ui.uploadBox.addEventListener("dragover", function (e) { e.preventDefault(); ui.uploadBox.classList.add("dragover"); });
+  ui.uploadBox.addEventListener("dragleave", function () { ui.uploadBox.classList.remove("dragover"); });
+  ui.uploadBox.addEventListener("drop", function (e) { e.preventDefault(); ui.uploadBox.classList.remove("dragover"); processFiles(e.dataTransfer.files); });
 }
 
 wireEvents();
-
-
