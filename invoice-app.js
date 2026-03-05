@@ -309,7 +309,7 @@ async function processFiles(files) {
     updateProgress(100, "Invoice OCR completed.");
 
     ui.progressSection.style.display = "none";
-    ui.resultsSection.style.display = "flex";
+    ui.resultsSection.style.display = "block";
   } catch (error) {
     var errMsg = (error && error.message) ? error.message : String(error || "Unknown error");
     console.error("Invoice OCR Error:", error);

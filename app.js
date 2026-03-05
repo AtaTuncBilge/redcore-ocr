@@ -1,4 +1,4 @@
-﻿const PDF_SCALE = 1.8;
+const PDF_SCALE = 1.8;
 const MAX_FILES = 8;
 const MAX_PREVIEW_CHARS = 240;
 
@@ -197,7 +197,7 @@ function initReviews() {
         alert("Please select a star rating.");
         return;
       }
-      alert("Review posted! (Prototype â€” review not saved to server).");
+      alert("Review posted! (Prototype — review not saved to server).");
       ui.newReviewText.value = "";
       if (ui.starRating && ui.starRating._reset) ui.starRating._reset();
     });
@@ -209,7 +209,7 @@ function languageLabel(code) {
 }
 
 function inferLanguage(text) {
-  var turkishPattern = /[Ã§ÄŸÄ±Ã¶ÅŸÃ¼Ã‡ÄÄ°Ã–ÅÃœ]/;
+  var turkishPattern = /[çğıöşüÇĞİÖŞÜ]/;
   if (turkishPattern.test(text)) return "tur";
   return "eng";
 }
@@ -217,13 +217,6 @@ function inferLanguage(text) {
 // Detect script/language from OCR text by checking Unicode character ranges
 function detectScriptLanguage(text) {
   var t = text || "";
-  // Normalize common UTF-8 mojibake so Latin checks are more reliable
-  t = String(t)
-    .replace(/Ã§/g, "ç").replace(/ÄŸ/g, "ğ").replace(/Ä±/g, "ı")
-    .replace(/Ã¶/g, "ö").replace(/ÅŸ/g, "ş").replace(/Ã¼/g, "ü")
-    .replace(/Ã‡/g, "Ç").replace(/Ä/g, "Ğ").replace(/Ä°/g, "İ")
-    .replace(/Ã–/g, "Ö").replace(/Å/g, "Ş").replace(/Ãœ/g, "Ü");
-
   // Turkish specific
   if (/[çğıöşüÇĞİÖŞÜ]/.test(t)) return "tur";
   // Arabic script
@@ -252,10 +245,25 @@ function detectScriptLanguage(text) {
   if (/[\u10A0-\u10FF]/.test(t)) return "kat";
   // Armenian
   if (/[\u0530-\u058F]/.test(t)) return "hye";
-
-  // For Latin scripts, prefer English default to prevent false detections.
+  // German (ß, umlauts)
+  if (/[äöüßÄÖÜ]/.test(t)) return "deu";
+  // French (accents)
+  if (/[àâæçéèêëîïôœùûüÿ]/i.test(t)) return "fra";
+  // Spanish (ñ, ¿, ¡)
+  if (/[ñ¿¡]/i.test(t)) return "spa";
+  // Portuguese
+  if (/[ãõ]/i.test(t)) return "por";
+  // Polish
+  if (/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(t)) return "pol";
+  // Romanian
+  if (/[ăâîșțĂÂÎȘȚ]/.test(t)) return "ron";
+  // Czech/Slovak
+  if (/[ěščřžýáíéůúďťňĚŠČŘŽÝÁÍÉŮÚĎŤŇ]/.test(t)) return "ces";
+  // Vietnamese
+  if (/[\u01A0-\u01B0\u1EA0-\u1EF9]/.test(t)) return "vie";
   return "eng";
 }
+
 function deriveStabilityRate(progress) {
   const p = Math.max(0, Math.min(100, Number(progress) || 0));
   if (p >= 100) return 100;
@@ -558,7 +566,7 @@ async function processFiles(files) {
     updateProgress(100, "OCR completed.");
 
     if (ui.progressSection) ui.progressSection.style.display = "none";
-    if (ui.resultsSection) ui.resultsSection.style.display = "flex";
+    if (ui.resultsSection) ui.resultsSection.style.display = "block";
 
     window.dispatchEvent(new CustomEvent("ocr:completed", { detail: { count: ocrRows.length } }));
 
@@ -587,7 +595,7 @@ function downloadText() {
   var lines = ocrRows.map(function (row) {
     return "=== " + row.fileName + " | Page " + row.page + " | " + row.language + " | Confidence: " + Math.round(row.confidence) + "% ===\n" + row.fullText;
   });
-  var content = lines.join("\n\n" + "â€”".repeat(60) + "\n\n");
+  var content = lines.join("\n\n" + "—".repeat(60) + "\n\n");
   var blob = new Blob([content], { type: "text/plain;charset=utf-8" });
   var url = URL.createObjectURL(blob);
   var a = document.createElement("a");
@@ -627,4 +635,3 @@ function wireEvents() {
 }
 
 wireEvents();
-
