@@ -60,7 +60,7 @@
             <header class="site-header reveal-up">
               <div class="site-brand">
                 <div class="hero-mark">
-                  <span class="dot"></span>
+                  <img src="./ocr_logo_icon_png_transparent.png" alt="Redcore OCR" class="brand-logo">
                   <span class="brand">redcore-ocr</span>
                   <span class="build-tag">v2.5</span>
                 </div>
@@ -81,7 +81,7 @@
 
             <section class="hero-card panel reveal-up delay-1" id="uploadSection">
               <div class="hero-content">
-                <h1>REDCORE<br>OCR<a href="./invoice-ocr.html" class="dot-link-hero" title="Invoice OCR"><span class="dot"></span></a></h1>
+                <h1><span class="hero-title-brand"><img src="./ocr_logo_icon_png_transparent.png" alt="Redcore OCR" class="hero-title-logo">REDCORE</span><br>OCR<a href="./invoice-ocr.html" class="dot-link-hero" title="Invoice OCR"><span class="dot"></span></a></h1>
                 <p class="subtitle">Premium universal OCR platform. Instant recognition for PDF and images with auto-language detection.</p>
                 <div class="hero-stats">
                   <span>80+ languages</span>

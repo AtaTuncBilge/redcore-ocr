@@ -214,6 +214,14 @@ body {
   border: 1px solid var(--border-accent);
 }
 
+.brand-logo {
+  width: 20px;
+  height: 16px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+}
+
 .brand {
   font-family: var(--font-heading);
   font-weight: 800;
@@ -328,6 +336,19 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.hero-title-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hero-title-logo {
+  width: clamp(34px, 4.2vw, 48px);
+  height: auto;
+  object-fit: contain;
+  display: inline-block;
 }
 
 .subtitle {
