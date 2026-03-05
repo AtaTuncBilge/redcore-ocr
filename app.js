@@ -8,92 +8,18 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs
 const TESS_CDN = "https://tessdata.projectnaptha.com/4.0.0";
 const LOCAL_LANGS = ["eng", "tur"]; // available in ./lang-data/
 
-// 80+ supported languages
-const ALL_LANGUAGES = [
-  { code: "auto", label: "Auto Detect (eng+tur)" },
-  { code: "eng", label: "English" },
-  { code: "tur", label: "Turkish" },
-  { code: "deu", label: "German" },
-  { code: "fra", label: "French" },
-  { code: "ita", label: "Italian" },
-  { code: "spa", label: "Spanish" },
-  { code: "por", label: "Portuguese" },
-  { code: "nld", label: "Dutch" },
-  { code: "pol", label: "Polish" },
-  { code: "rus", label: "Russian" },
-  { code: "ukr", label: "Ukrainian" },
-  { code: "bel", label: "Belarusian" },
-  { code: "bul", label: "Bulgarian" },
-  { code: "hrv", label: "Croatian" },
-  { code: "ces", label: "Czech" },
-  { code: "dan", label: "Danish" },
-  { code: "est", label: "Estonian" },
-  { code: "fin", label: "Finnish" },
-  { code: "ell", label: "Greek" },
-  { code: "hun", label: "Hungarian" },
-  { code: "lav", label: "Latvian" },
-  { code: "lit", label: "Lithuanian" },
-  { code: "nor", label: "Norwegian" },
-  { code: "ron", label: "Romanian" },
-  { code: "srp", label: "Serbian" },
-  { code: "slk", label: "Slovak" },
-  { code: "slv", label: "Slovenian" },
-  { code: "swe", label: "Swedish" },
-  { code: "cat", label: "Catalan" },
-  { code: "glg", label: "Galician" },
-  { code: "eus", label: "Basque" },
-  { code: "ara", label: "Arabic" },
-  { code: "heb", label: "Hebrew" },
-  { code: "fas", label: "Persian" },
-  { code: "urd", label: "Urdu" },
-  { code: "hin", label: "Hindi" },
-  { code: "ben", label: "Bengali" },
-  { code: "tam", label: "Tamil" },
-  { code: "tel", label: "Telugu" },
-  { code: "kan", label: "Kannada" },
-  { code: "mal", label: "Malayalam" },
-  { code: "guj", label: "Gujarati" },
-  { code: "mar", label: "Marathi" },
-  { code: "pan", label: "Punjabi" },
-  { code: "ori", label: "Oriya" },
-  { code: "sin", label: "Sinhala" },
-  { code: "nep", label: "Nepali" },
-  { code: "san", label: "Sanskrit" },
-  { code: "tha", label: "Thai" },
-  { code: "vie", label: "Vietnamese" },
-  { code: "ind", label: "Indonesian" },
-  { code: "msa", label: "Malay" },
-  { code: "fil", label: "Filipino" },
-  { code: "mya", label: "Myanmar" },
-  { code: "khm", label: "Khmer" },
-  { code: "lao", label: "Lao" },
-  { code: "jpn", label: "Japanese" },
-  { code: "kor", label: "Korean" },
-  { code: "chi_sim", label: "Chinese (Simplified)" },
-  { code: "chi_tra", label: "Chinese (Traditional)" },
-  { code: "afr", label: "Afrikaans" },
-  { code: "swa", label: "Swahili" },
-  { code: "amh", label: "Amharic" },
-  { code: "tir", label: "Tigrinya" },
-  { code: "kat", label: "Georgian" },
-  { code: "hye", label: "Armenian" },
-  { code: "aze", label: "Azerbaijani" },
-  { code: "uzb", label: "Uzbek" },
-  { code: "kaz", label: "Kazakh" },
-  { code: "kir", label: "Kyrgyz" },
-  { code: "tgk", label: "Tajik" },
-  { code: "mon", label: "Mongolian" },
-  { code: "bod", label: "Tibetan" },
-  { code: "cym", label: "Welsh" },
-  { code: "gle", label: "Irish" },
-  { code: "isl", label: "Icelandic" },
-  { code: "mkd", label: "Macedonian" },
-  { code: "bos", label: "Bosnian" },
-  { code: "sqi", label: "Albanian" },
-  { code: "mlt", label: "Maltese" },
-  { code: "lat", label: "Latin" },
-  { code: "epo", label: "Esperanto" }
-];
+// Language labels for display
+const LANG_LABELS = {
+  eng: "English", tur: "Turkish", deu: "German", fra: "French", ita: "Italian",
+  spa: "Spanish", por: "Portuguese", nld: "Dutch", pol: "Polish", rus: "Russian",
+  ukr: "Ukrainian", bul: "Bulgarian", hrv: "Croatian", ces: "Czech", dan: "Danish",
+  fin: "Finnish", ell: "Greek", hun: "Hungarian", ron: "Romanian", srp: "Serbian",
+  slk: "Slovak", slv: "Slovenian", swe: "Swedish", ara: "Arabic", heb: "Hebrew",
+  fas: "Persian", urd: "Urdu", hin: "Hindi", ben: "Bengali", tam: "Tamil",
+  tel: "Telugu", kan: "Kannada", mal: "Malayalam", tha: "Thai", vie: "Vietnamese",
+  jpn: "Japanese", kor: "Korean", chi_sim: "Chinese (Simplified)", chi_tra: "Chinese (Traditional)",
+  kat: "Georgian", hye: "Armenian", aze: "Azerbaijani", mon: "Mongolian"
+};
 
 let ocrRows = [];
 let isProcessing = false;
@@ -126,8 +52,7 @@ const ui = {
   simulationOverlay: null,
   submitReviewBtn: null,
   newReviewText: null,
-  starRating: null,
-  langSelect: null
+  starRating: null
 };
 
 function bindUi() {
@@ -162,7 +87,6 @@ function bindUi() {
   ui.submitReviewBtn = document.getElementById("submitReviewBtn");
   ui.newReviewText = document.getElementById("newReviewText");
   ui.starRating = document.getElementById("starRating");
-  ui.langSelect = document.getElementById("langSelect");
 
   return Boolean(
     ui.fileInput && ui.uploadBox && ui.progressSection && ui.resultsSection &&
@@ -170,23 +94,6 @@ function bindUi() {
   );
 }
 
-function populateLanguageSelector() {
-  if (!ui.langSelect) return;
-  ui.langSelect.innerHTML = "";
-  ALL_LANGUAGES.forEach(function (lang) {
-    var opt = document.createElement("option");
-    opt.value = lang.code;
-    opt.textContent = lang.label;
-    ui.langSelect.appendChild(opt);
-  });
-}
-
-function getSelectedLanguage() {
-  if (!ui.langSelect) return "eng+tur";
-  var val = ui.langSelect.value;
-  if (val === "auto") return "eng+tur";
-  return val;
-}
 
 // Check if all parts of a lang string are available locally
 function isLocalLang(langStr) {
@@ -296,10 +203,7 @@ function initReviews() {
 }
 
 function languageLabel(code) {
-  for (var i = 0; i < ALL_LANGUAGES.length; i++) {
-    if (ALL_LANGUAGES[i].code === code) return ALL_LANGUAGES[i].label;
-  }
-  return code.toUpperCase();
+  return LANG_LABELS[code] || code.toUpperCase();
 }
 
 function inferLanguage(text) {
@@ -538,16 +442,13 @@ async function processFiles(files) {
   setWarning("");
   ocrRows = [];
 
-  var selectedLang = getSelectedLanguage();
-  var useLocal = isLocalLang(selectedLang);
-
   let worker;
   try {
     updateProgress(3, "Initializing OCR engine...");
 
-    // Use local lang-data for eng/tur, CDN for everything else
     var workerOpts = {
-      gzip: !useLocal,
+      langPath: './lang-data',
+      gzip: false,
       logger: function (m) {
         if (m.status === "recognizing text") {
           updateProgress(
@@ -557,12 +458,6 @@ async function processFiles(files) {
         }
       }
     };
-
-    if (useLocal) {
-      workerOpts.langPath = './lang-data';
-    } else {
-      workerOpts.langPath = TESS_CDN;
-    }
 
     worker = await Tesseract.createWorker(workerOpts);
 
@@ -586,19 +481,19 @@ async function processFiles(files) {
     }
 
     // Auto-detect: OCR first page with eng, detect script, pick best language
-    var ocrLang = selectedLang;
-    if (selectedLang === "eng+tur" && allPages.length > 0) {
+    var ocrLang = "eng";
+    if (allPages.length > 0) {
       updateProgress(12, "Detecting language...");
+      if (ui.detectedLang) ui.detectedLang.textContent = "detecting...";
       await worker.loadLanguage("eng");
       await worker.initialize("eng");
       var probe = await worker.recognize(allPages[0].canvas);
       var detected = detectScriptLanguage(probe.data.text);
       ocrLang = detected;
-      if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(detected) + " (detected)";
+      if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(detected);
 
       // Re-initialize with detected language if different from eng
       if (detected !== "eng") {
-        // Need CDN for non-local languages
         if (!isLocalLang(detected)) {
           await worker.terminate();
           worker = await Tesseract.createWorker({ langPath: TESS_CDN, gzip: true, logger: workerOpts.logger });
@@ -608,10 +503,9 @@ async function processFiles(files) {
         await worker.initialize(detected);
       }
     } else {
-      updateProgress(8, "Loading " + languageLabel(selectedLang) + "...");
-      await worker.loadLanguage(selectedLang);
-      await worker.initialize(selectedLang);
-      if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(selectedLang);
+      await worker.loadLanguage("eng");
+      await worker.initialize("eng");
+      if (ui.detectedLang) ui.detectedLang.textContent = "English";
     }
 
     // OCR each page
@@ -706,7 +600,6 @@ function wireEvents() {
   initNavigation();
   initStarRating();
   initReviews();
-  populateLanguageSelector();
 
   ui.fileInput.addEventListener("change", function (e) { processFiles(e.target.files); });
   ui.pickFileBtn.addEventListener("click", function () { ui.fileInput.click(); });

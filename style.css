@@ -1021,58 +1021,6 @@ tr:hover td {
   color: var(--accent);
 }
 
-/* ---- Language Selector ---- */
-.lang-select-wrap {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  justify-content: center;
-}
-
-.lang-label {
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--fg-muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.lang-select {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
-  color: var(--fg);
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 8px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-  min-width: 200px;
-  transition: border-color var(--duration-fast) var(--ease-expo),
-              box-shadow var(--duration-fast) var(--ease-expo);
-  -webkit-appearance: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A0A5AE' stroke-width='2' stroke-linecap='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 36px;
-}
-
-.lang-select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(255,30,60,0.15);
-}
-
-.lang-select option {
-  background: #0a0a0c;
-  color: var(--fg);
-}
 
 /* ---- Nav Icons ---- */
 .nav-icon {
