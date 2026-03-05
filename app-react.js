@@ -79,20 +79,22 @@
               </div>
             </header>
 
-            <section class="hero-card panel reveal-up delay-1" id="uploadSection">
-              <div class="hero-content">
-                <h1><span class="hero-title-brand"><img src="./ocr_logo_icon_png_transparent.png" alt="Redcore OCR" class="hero-title-logo">REDCORE</span><br>OCR<a href="./invoice-ocr.html" class="dot-link-hero" title="Invoice OCR"><span class="dot"></span></a></h1>
-                <p class="subtitle">Premium universal OCR platform. Instant recognition for PDF and images with auto-language detection.</p>
-                <div class="hero-stats">
-                  <span>80+ languages</span>
-                  <span>pdf + images</span>
-                  <span>real-time simulation</span>
+            <main class="landing-layout" id="uploadSection">
+              <section class="landing-left hero-card panel reveal-up delay-1">
+                <div class="hero-content">
+                  <h1><span class="hero-title-brand"><img src="./ocr_logo_icon_png_transparent.png" alt="Redcore OCR" class="hero-title-logo">REDCORE</span><br>OCR<a href="./invoice-ocr.html" class="dot-link-hero" title="Invoice OCR"><span class="dot"></span></a></h1>
+                  <p class="subtitle">Premium universal OCR platform. Instant recognition for PDF and images with auto-language detection.</p>
+                  <div class="hero-stats">
+                    <span>80+ languages</span>
+                    <span>pdf + images</span>
+                    <span>real-time simulation</span>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
 
-            <main class="main-stack">
-              <section class="panel upload-section reveal-up delay-2">
+              <section class="landing-right reveal-up delay-2">
+                <div class="landing-panel panel">
+                  <section class="upload-section">
                 <div class="upload-box" id="uploadBox">
                   <div class="upload-chip">universal ocr</div>
                   <h2><svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg> upload files</h2>
@@ -100,9 +102,9 @@
                   <input type="file" id="fileInput" accept=".pdf,image/*" multiple hidden>
                   <button class="btn btn-primary" id="pickFileBtn" type="button"><svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> select files</button>
                 </div>
-              </section>
+                  </section>
 
-              <section class="panel progress-section" id="progressSection" style="display:none;">
+                  <section class="progress-section" id="progressSection" style="display:none;">
                 <div class="progress-top">
                   <h3><svg class="section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ocr processing</h3>
                   <button class="btn btn-secondary btn-compact" id="backToUploadBtn" type="button"><svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> cancel</button>
@@ -133,9 +135,9 @@
                     </div>
                   </div>
                 </div>
-              </section>
+                  </section>
 
-              <section class="panel results-section" id="resultsSection" style="display:none;">
+                  <section class="results-section" id="resultsSection" style="display:none;">
                 <div id="resultsSectionAnchor"></div>
                 <div class="results-header">
                   <div>
@@ -157,8 +159,12 @@
                   <button class="btn btn-success" id="downloadBtn" type="button"><svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> download excel</button>
                   <button class="btn btn-secondary" id="downloadTextBtn" type="button"><svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> download text</button>
                 </div>
+                  </section>
+                </div>
               </section>
+            </main>
 
+            <main class="main-stack">
               <div class="section-divider"></div>
 
               <section class="panel reviews-section reveal-up" id="reviewsSection">
