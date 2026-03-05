@@ -1,25 +1,99 @@
-const PDF_SCALE = 2.4;
+const PDF_SCALE = 1.8;
 const MAX_FILES = 8;
 const MAX_PREVIEW_CHARS = 240;
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-const LANGUAGE_LABELS = {
-  eng: "English",
-  tur: "Turkish",
-  deu: "German",
-  fra: "French",
-  ita: "Italian",
-  spa: "Spanish",
-  por: "Portuguese",
-  ara: "Arabic",
-  rus: "Russian",
-  jpn: "Japanese",
-  kor: "Korean",
-  chi_sim: "Chinese (Simplified)",
-  chi_tra: "Chinese (Traditional)",
-  "eng+tur": "English + Turkish"
-};
+// Tesseract CDN for languages we don't bundle locally
+const TESS_CDN = "https://tessdata.projectnaptha.com/4.0.0";
+const LOCAL_LANGS = ["eng", "tur"]; // available in ./lang-data/
+
+// 80+ supported languages
+const ALL_LANGUAGES = [
+  { code: "auto", label: "Auto Detect (eng+tur)" },
+  { code: "eng", label: "English" },
+  { code: "tur", label: "Turkish" },
+  { code: "deu", label: "German" },
+  { code: "fra", label: "French" },
+  { code: "ita", label: "Italian" },
+  { code: "spa", label: "Spanish" },
+  { code: "por", label: "Portuguese" },
+  { code: "nld", label: "Dutch" },
+  { code: "pol", label: "Polish" },
+  { code: "rus", label: "Russian" },
+  { code: "ukr", label: "Ukrainian" },
+  { code: "bel", label: "Belarusian" },
+  { code: "bul", label: "Bulgarian" },
+  { code: "hrv", label: "Croatian" },
+  { code: "ces", label: "Czech" },
+  { code: "dan", label: "Danish" },
+  { code: "est", label: "Estonian" },
+  { code: "fin", label: "Finnish" },
+  { code: "ell", label: "Greek" },
+  { code: "hun", label: "Hungarian" },
+  { code: "lav", label: "Latvian" },
+  { code: "lit", label: "Lithuanian" },
+  { code: "nor", label: "Norwegian" },
+  { code: "ron", label: "Romanian" },
+  { code: "srp", label: "Serbian" },
+  { code: "slk", label: "Slovak" },
+  { code: "slv", label: "Slovenian" },
+  { code: "swe", label: "Swedish" },
+  { code: "cat", label: "Catalan" },
+  { code: "glg", label: "Galician" },
+  { code: "eus", label: "Basque" },
+  { code: "ara", label: "Arabic" },
+  { code: "heb", label: "Hebrew" },
+  { code: "fas", label: "Persian" },
+  { code: "urd", label: "Urdu" },
+  { code: "hin", label: "Hindi" },
+  { code: "ben", label: "Bengali" },
+  { code: "tam", label: "Tamil" },
+  { code: "tel", label: "Telugu" },
+  { code: "kan", label: "Kannada" },
+  { code: "mal", label: "Malayalam" },
+  { code: "guj", label: "Gujarati" },
+  { code: "mar", label: "Marathi" },
+  { code: "pan", label: "Punjabi" },
+  { code: "ori", label: "Oriya" },
+  { code: "sin", label: "Sinhala" },
+  { code: "nep", label: "Nepali" },
+  { code: "san", label: "Sanskrit" },
+  { code: "tha", label: "Thai" },
+  { code: "vie", label: "Vietnamese" },
+  { code: "ind", label: "Indonesian" },
+  { code: "msa", label: "Malay" },
+  { code: "fil", label: "Filipino" },
+  { code: "mya", label: "Myanmar" },
+  { code: "khm", label: "Khmer" },
+  { code: "lao", label: "Lao" },
+  { code: "jpn", label: "Japanese" },
+  { code: "kor", label: "Korean" },
+  { code: "chi_sim", label: "Chinese (Simplified)" },
+  { code: "chi_tra", label: "Chinese (Traditional)" },
+  { code: "afr", label: "Afrikaans" },
+  { code: "swa", label: "Swahili" },
+  { code: "amh", label: "Amharic" },
+  { code: "tir", label: "Tigrinya" },
+  { code: "kat", label: "Georgian" },
+  { code: "hye", label: "Armenian" },
+  { code: "aze", label: "Azerbaijani" },
+  { code: "uzb", label: "Uzbek" },
+  { code: "kaz", label: "Kazakh" },
+  { code: "kir", label: "Kyrgyz" },
+  { code: "tgk", label: "Tajik" },
+  { code: "mon", label: "Mongolian" },
+  { code: "bod", label: "Tibetan" },
+  { code: "cym", label: "Welsh" },
+  { code: "gle", label: "Irish" },
+  { code: "isl", label: "Icelandic" },
+  { code: "mkd", label: "Macedonian" },
+  { code: "bos", label: "Bosnian" },
+  { code: "sqi", label: "Albanian" },
+  { code: "mlt", label: "Maltese" },
+  { code: "lat", label: "Latin" },
+  { code: "epo", label: "Esperanto" }
+];
 
 let ocrRows = [];
 let isProcessing = false;
@@ -52,7 +126,8 @@ const ui = {
   simulationOverlay: null,
   submitReviewBtn: null,
   newReviewText: null,
-  starRating: null
+  starRating: null,
+  langSelect: null
 };
 
 function bindUi() {
@@ -87,11 +162,36 @@ function bindUi() {
   ui.submitReviewBtn = document.getElementById("submitReviewBtn");
   ui.newReviewText = document.getElementById("newReviewText");
   ui.starRating = document.getElementById("starRating");
+  ui.langSelect = document.getElementById("langSelect");
 
   return Boolean(
     ui.fileInput && ui.uploadBox && ui.progressSection && ui.resultsSection &&
     ui.progressFill && ui.progressText && ui.resultsBody && ui.downloadBtn
   );
+}
+
+function populateLanguageSelector() {
+  if (!ui.langSelect) return;
+  ui.langSelect.innerHTML = "";
+  ALL_LANGUAGES.forEach(function (lang) {
+    var opt = document.createElement("option");
+    opt.value = lang.code;
+    opt.textContent = lang.label;
+    ui.langSelect.appendChild(opt);
+  });
+}
+
+function getSelectedLanguage() {
+  if (!ui.langSelect) return "eng+tur";
+  var val = ui.langSelect.value;
+  if (val === "auto") return "eng+tur";
+  return val;
+}
+
+// Check if all parts of a lang string are available locally
+function isLocalLang(langStr) {
+  var parts = langStr.split("+");
+  return parts.every(function (p) { return LOCAL_LANGS.indexOf(p) !== -1; });
 }
 
 function handleAuth() {
@@ -171,7 +271,6 @@ function initStarRating() {
     });
   });
 
-  // Expose for review submission
   ui.starRating._getSelected = () => selectedRating;
   ui.starRating._reset = () => {
     selectedRating = 0;
@@ -197,13 +296,14 @@ function initReviews() {
 }
 
 function languageLabel(code) {
-  if (LANGUAGE_LABELS[code]) return LANGUAGE_LABELS[code];
+  for (var i = 0; i < ALL_LANGUAGES.length; i++) {
+    if (ALL_LANGUAGES[i].code === code) return ALL_LANGUAGES[i].label;
+  }
   return code.toUpperCase();
 }
 
 function inferLanguage(text) {
-  // Check for Turkish-specific chars in the OCR output
-  const turkishPattern = /[çğıöşüÇĞİÖŞÜ]/;
+  var turkishPattern = /[çğıöşüÇĞİÖŞÜ]/;
   if (turkishPattern.test(text)) return "tur";
   return "eng";
 }
@@ -216,9 +316,9 @@ function deriveStabilityRate(progress) {
 
 function updateProgress(progress, message) {
   const safeProgress = Math.max(0, Math.min(100, Number(progress) || 0));
-  if (ui.progressFill) ui.progressFill.style.width = `${safeProgress}%`;
+  if (ui.progressFill) ui.progressFill.style.width = safeProgress + "%";
   if (ui.progressText) ui.progressText.textContent = message;
-  if (ui.stabilityRate) ui.stabilityRate.textContent = `${deriveStabilityRate(safeProgress)}%`;
+  if (ui.stabilityRate) ui.stabilityRate.textContent = deriveStabilityRate(safeProgress) + "%";
 }
 
 function setWarning(message) {
@@ -283,10 +383,15 @@ async function loadImageToCanvas(file) {
   });
 }
 
+function releaseCanvas(canvas) {
+  canvas.width = 0;
+  canvas.height = 0;
+}
+
 function textPreview(text) {
   const clean = String(text || "").replace(/\s+/g, " ").trim();
   if (clean.length <= MAX_PREVIEW_CHARS) return clean;
-  return `${clean.slice(0, MAX_PREVIEW_CHARS)}...`;
+  return clean.slice(0, MAX_PREVIEW_CHARS) + "...";
 }
 
 function updateResultsTable() {
@@ -316,7 +421,7 @@ function updateResultsTable() {
       rowData.fileName,
       String(rowData.page),
       rowData.language,
-      `${Math.round(rowData.confidence)}%`,
+      Math.round(rowData.confidence) + "%",
       String(rowData.characters),
       rowData.preview
     ];
@@ -345,25 +450,29 @@ function startSimulation(canvas) {
   ctx.drawImage(canvas, 0, 0);
 
   ui.simulationOverlay.innerHTML = "";
-  ui.simulationOverlay.style.width = `${ui.simulationCanvas.clientWidth}px`;
-  ui.simulationOverlay.style.height = `${ui.simulationCanvas.clientHeight}px`;
+  ui.simulationOverlay.style.width = ui.simulationCanvas.clientWidth + "px";
+  ui.simulationOverlay.style.height = ui.simulationCanvas.clientHeight + "px";
 }
 
-function addSimulationWord(word) {
-  if (!ui.simulationOverlay || !ui.simulationCanvas) return;
+function addSimulationWords(words) {
+  if (!ui.simulationOverlay || !ui.simulationCanvas || !words || !words.length) return;
 
-  const span = document.createElement("span");
-  span.className = "sim-word";
-  span.textContent = word.text;
+  var scaleX = ui.simulationCanvas.clientWidth / ui.simulationCanvas.width;
+  var scaleY = ui.simulationCanvas.clientHeight / ui.simulationCanvas.height;
+  var frag = document.createDocumentFragment();
 
-  const scaleX = ui.simulationCanvas.clientWidth / ui.simulationCanvas.width;
-  const scaleY = ui.simulationCanvas.clientHeight / ui.simulationCanvas.height;
+  for (var i = 0; i < words.length; i++) {
+    var word = words[i];
+    var span = document.createElement("span");
+    span.className = "sim-word";
+    span.textContent = word.text;
+    span.style.left = (word.bbox.x0 * scaleX) + "px";
+    span.style.top = (word.bbox.y0 * scaleY) + "px";
+    span.style.fontSize = ((word.bbox.y1 - word.bbox.y0) * scaleY) + "px";
+    frag.appendChild(span);
+  }
 
-  span.style.left = `${word.bbox.x0 * scaleX}px`;
-  span.style.top = `${word.bbox.y0 * scaleY}px`;
-  span.style.fontSize = `${(word.bbox.y1 - word.bbox.y0) * scaleY}px`;
-
-  ui.simulationOverlay.appendChild(span);
+  ui.simulationOverlay.appendChild(frag);
 }
 
 async function processFiles(files) {
@@ -379,77 +488,91 @@ async function processFiles(files) {
   setWarning("");
   ocrRows = [];
 
+  var selectedLang = getSelectedLanguage();
+  var useLocal = isLocalLang(selectedLang);
+
   let worker;
   try {
-    updateProgress(5, "Initializing OCR engine...");
+    updateProgress(3, "Initializing OCR engine...");
 
-    // Tesseract.js 4.x API: createWorker(options) then loadLanguage + initialize
-    worker = await Tesseract.createWorker({
-      langPath: './lang-data',
-      gzip: false,
+    // Use local lang-data for eng/tur, CDN for everything else
+    var workerOpts = {
+      gzip: !useLocal,
       logger: function (m) {
         if (m.status === "recognizing text") {
           updateProgress(
             20 + Math.round(m.progress * 60),
-            "Running OCR: " + Math.round(m.progress * 100) + "%"
+            "OCR: " + Math.round(m.progress * 100) + "%"
           );
         }
       }
-    });
-    await worker.loadLanguage("eng+tur");
-    await worker.initialize("eng+tur");
+    };
 
-    if (ui.detectedLang) ui.detectedLang.textContent = "English + Turkish";
+    if (useLocal) {
+      workerOpts.langPath = './lang-data';
+    } else {
+      workerOpts.langPath = TESS_CDN;
+    }
 
+    worker = await Tesseract.createWorker(workerOpts);
+
+    updateProgress(8, "Loading language: " + languageLabel(selectedLang) + "...");
+    await worker.loadLanguage(selectedLang);
+    await worker.initialize(selectedLang);
+
+    if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(selectedLang);
+
+    // Pre-render all pages across all files for faster sequential OCR
+    var allPages = [];
     for (let fileIndex = 0; fileIndex < validFiles.length; fileIndex++) {
       const file = validFiles[fileIndex];
-      updateProgress(10, "Loading " + file.name + "...");
+      updateProgress(10, "Rendering " + file.name + "...");
 
-      let pages = [];
       if (file.type === "application/pdf") {
         const buffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument(buffer).promise;
         for (let p = 1; p <= pdf.numPages; p++) {
           const page = await pdf.getPage(p);
-          pages.push(await renderPageToCanvas(page));
+          allPages.push({ canvas: await renderPageToCanvas(page), fileName: file.name, page: p });
         }
         pdf.destroy();
       } else {
-        pages.push(await loadImageToCanvas(file));
+        allPages.push({ canvas: await loadImageToCanvas(file), fileName: file.name, page: 1 });
+      }
+    }
+
+    // OCR each page
+    for (let i = 0; i < allPages.length; i++) {
+      if (!isProcessing) break;
+
+      var pageInfo = allPages[i];
+      startSimulation(pageInfo.canvas);
+      updateProgress(15 + Math.round((i / allPages.length) * 70), "OCR page " + (i + 1) + "/" + allPages.length + "...");
+
+      var result = await worker.recognize(pageInfo.canvas);
+      var data = result.data;
+
+      // Infer language for display
+      var lang = (selectedLang === "eng+tur") ? inferLanguage(data.text) : selectedLang;
+      if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(lang);
+
+      // Batch-add simulation words (no per-word delay)
+      if (data.words && isProcessing) {
+        addSimulationWords(data.words);
       }
 
-      for (let pIdx = 0; pIdx < pages.length; pIdx++) {
-        const canvas = pages[pIdx];
-        startSimulation(canvas);
+      ocrRows.push({
+        fileName: pageInfo.fileName,
+        page: pageInfo.page,
+        language: languageLabel(lang),
+        confidence: data.confidence,
+        characters: data.text.trim().length,
+        preview: textPreview(data.text),
+        fullText: data.text
+      });
 
-        updateProgress(15, "OCR page " + (pIdx + 1) + "/" + pages.length + "...");
-
-        var result = await worker.recognize(canvas);
-        var data = result.data;
-
-        // Infer dominant language from output (for display only)
-        var lang = inferLanguage(data.text);
-        if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(lang);
-
-        // Simulation: Add words with slight delay for visual effect
-        if (data.words && isProcessing) {
-          for (let i = 0; i < data.words.length; i++) {
-            if (!isProcessing) break;
-            addSimulationWord(data.words[i]);
-            if (i % 8 === 0) await new Promise(function (r) { setTimeout(r, 5); });
-          }
-        }
-
-        ocrRows.push({
-          fileName: file.name,
-          page: pIdx + 1,
-          language: languageLabel(lang),
-          confidence: data.confidence,
-          characters: data.text.trim().length,
-          preview: textPreview(data.text),
-          fullText: data.text
-        });
-      }
+      // Release canvas memory after OCR
+      releaseCanvas(pageInfo.canvas);
     }
 
     updateResultsTable();
@@ -495,6 +618,7 @@ function wireEvents() {
   initNavigation();
   initStarRating();
   initReviews();
+  populateLanguageSelector();
 
   ui.fileInput.addEventListener("change", function (e) { processFiles(e.target.files); });
   ui.pickFileBtn.addEventListener("click", function () { ui.fileInput.click(); });
