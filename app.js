@@ -39,13 +39,14 @@ const ui = {
   resultsSection: null,
   progressFill: null,
   progressText: null,
-  resultsBody: null,
+  resultsTextBox: null,
   totalInvoices: null,
   totalItems: null,
   stabilityRate: null,
   warningBox: null,
   downloadBtn: null,
   backToUploadBtn: null,
+  resultsBackBtn: null,
   detectedLang: null,
   simulationContainer: null,
   simulationCanvas: null,
@@ -71,13 +72,14 @@ function bindUi() {
   ui.resultsSection = document.getElementById("resultsSection");
   ui.progressFill = document.getElementById("progressFill");
   ui.progressText = document.getElementById("progressText");
-  ui.resultsBody = document.getElementById("resultsBody");
+  ui.resultsTextBox = document.getElementById("resultsTextBox");
   ui.totalInvoices = document.getElementById("totalInvoices");
   ui.totalItems = document.getElementById("totalItems");
   ui.stabilityRate = document.getElementById("stabilityRate");
   ui.warningBox = document.getElementById("warningBox");
   ui.downloadBtn = document.getElementById("downloadBtn");
   ui.backToUploadBtn = document.getElementById("backToUploadBtn");
+  ui.resultsBackBtn = document.getElementById("resultsBackBtn");
   ui.detectedLang = document.getElementById("detectedLang");
 
   ui.simulationContainer = document.getElementById("simulationContainer");
@@ -90,7 +92,7 @@ function bindUi() {
 
   return Boolean(
     ui.fileInput && ui.uploadBox && ui.progressSection && ui.resultsSection &&
-    ui.progressFill && ui.progressText && ui.resultsBody && ui.downloadBtn
+    ui.progressFill && ui.progressText && ui.resultsTextBox && ui.downloadBtn
   );
 }
 
@@ -348,18 +350,15 @@ function textPreview(text) {
   return clean.slice(0, MAX_PREVIEW_CHARS) + "...";
 }
 
-function updateResultsTable() {
-  if (!ui.resultsBody) return;
-  ui.resultsBody.innerHTML = "";
+function updateResultsView() {
+  if (!ui.resultsTextBox) return;
+  ui.resultsTextBox.innerHTML = "";
 
   if (!ocrRows.length) {
-    const row = document.createElement("tr");
-    const cell = document.createElement("td");
-    cell.colSpan = 6;
-    cell.className = "empty-row";
-    cell.textContent = "No OCR output was produced.";
-    row.appendChild(cell);
-    ui.resultsBody.appendChild(row);
+    const empty = document.createElement("p");
+    empty.className = "results-empty";
+    empty.textContent = "No OCR output was produced.";
+    ui.resultsTextBox.appendChild(empty);
     if (ui.totalInvoices) ui.totalInvoices.textContent = "0";
     if (ui.totalItems) ui.totalItems.textContent = "0";
     return;
@@ -369,30 +368,51 @@ function updateResultsTable() {
   if (ui.totalInvoices) ui.totalInvoices.textContent = String(uniqueFiles.size);
   if (ui.totalItems) ui.totalItems.textContent = String(ocrRows.length);
 
+  const groupedByFile = new Map();
   ocrRows.forEach((rowData) => {
-    const row = document.createElement("tr");
-    const cells = [
-      rowData.fileName,
-      String(rowData.page),
-      rowData.language,
-      Math.round(rowData.confidence) + "%",
-      String(rowData.characters),
-      rowData.preview
-    ];
-
-    cells.forEach((value, index) => {
-      const cell = document.createElement("td");
-      if (index === 1 || index === 3) {
-        const strong = document.createElement("strong");
-        strong.textContent = value;
-        cell.appendChild(strong);
-      } else {
-        cell.textContent = value;
-      }
-      row.appendChild(cell);
-    });
-    ui.resultsBody.appendChild(row);
+    const existing = groupedByFile.get(rowData.fileName);
+    if (existing) {
+      existing.push(rowData);
+      return;
+    }
+    groupedByFile.set(rowData.fileName, [rowData]);
   });
+
+  const fragment = document.createDocumentFragment();
+
+  groupedByFile.forEach((pages, fileName) => {
+    const docBlock = document.createElement("section");
+    docBlock.className = "ocr-doc-block";
+
+    const title = document.createElement("h4");
+    title.className = "ocr-doc-title";
+    title.textContent = fileName;
+    docBlock.appendChild(title);
+
+    pages
+      .slice()
+      .sort((a, b) => a.page - b.page)
+      .forEach((pageData) => {
+        const pageBlock = document.createElement("article");
+        pageBlock.className = "ocr-page-block";
+
+        const meta = document.createElement("p");
+        meta.className = "ocr-page-meta";
+        meta.textContent = "Page " + pageData.page + " | " + pageData.language + " | " + Math.round(pageData.confidence) + "% confidence | " + pageData.characters + " chars";
+        pageBlock.appendChild(meta);
+
+        const text = document.createElement("pre");
+        text.className = "ocr-page-text";
+        text.textContent = String(pageData.fullText || "").trim() || "(No text found on this page)";
+        pageBlock.appendChild(text);
+
+        docBlock.appendChild(pageBlock);
+      });
+
+    fragment.appendChild(docBlock);
+  });
+
+  ui.resultsTextBox.appendChild(fragment);
 }
 
 function startSimulation(canvas) {
@@ -542,7 +562,7 @@ async function processFiles(files) {
       releaseCanvas(pageInfo.canvas);
     }
 
-    updateResultsTable();
+    updateResultsView();
     updateProgress(100, "OCR completed.");
 
     if (ui.progressSection) ui.progressSection.style.display = "none";
@@ -607,6 +627,7 @@ function wireEvents() {
   var dlTextBtn = document.getElementById("downloadTextBtn");
   if (dlTextBtn) dlTextBtn.addEventListener("click", downloadText);
   if (ui.backToUploadBtn) ui.backToUploadBtn.addEventListener("click", goBackToUpload);
+  if (ui.resultsBackBtn) ui.resultsBackBtn.addEventListener("click", goBackToUpload);
 
   ui.uploadBox.addEventListener("dragover", function (e) { e.preventDefault(); ui.uploadBox.classList.add("dragover"); });
   ui.uploadBox.addEventListener("dragleave", function () { ui.uploadBox.classList.remove("dragover"); });

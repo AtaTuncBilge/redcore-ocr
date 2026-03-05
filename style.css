@@ -713,6 +713,70 @@ body {
   font-weight: 800;
 }
 
+/* Main OCR formatted text output */
+.results-text-box {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.015);
+  padding: 14px;
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.results-empty {
+  color: var(--fg-muted);
+  text-align: center;
+  padding: 30px 16px;
+  margin: 0;
+}
+
+.ocr-doc-block {
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.01);
+  padding: 12px;
+}
+
+.ocr-doc-block + .ocr-doc-block {
+  margin-top: 12px;
+}
+
+.ocr-doc-title {
+  margin: 0 0 10px 0;
+  color: var(--fg);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  word-break: break-word;
+}
+
+.ocr-page-block + .ocr-page-block {
+  margin-top: 12px;
+}
+
+.ocr-page-meta {
+  margin: 0 0 6px 0;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+}
+
+.ocr-page-text {
+  margin: 0;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+  background: rgba(0,0,0,0.22);
+  color: var(--fg-subtle);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  max-height: 320px;
+  overflow: auto;
+}
+
 /* Table */
 .table-wrap {
   border-radius: 12px;

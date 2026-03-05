@@ -29,7 +29,8 @@ const ui = {
   stabilityRate: null,
   warningBox: null,
   downloadBtn: null,
-  backToUploadBtn: null
+  backToUploadBtn: null,
+  resultsBackBtn: null
 };
 
 function bindUi() {
@@ -55,6 +56,7 @@ function bindUi() {
   ui.warningBox = document.getElementById("warningBox");
   ui.downloadBtn = document.getElementById("downloadBtn");
   ui.backToUploadBtn = document.getElementById("backToUploadBtn");
+  ui.resultsBackBtn = document.getElementById("resultsBackBtn");
 
   return Boolean(
     ui.fileInput && ui.pickFileBtn && ui.uploadBox && ui.progressSection && ui.resultsSection &&
@@ -419,6 +421,9 @@ function wireEvents() {
 
   if (ui.backToUploadBtn) {
     ui.backToUploadBtn.addEventListener("click", goBackToUpload);
+  }
+  if (ui.resultsBackBtn) {
+    ui.resultsBackBtn.addEventListener("click", goBackToUpload);
   }
 
   ui.uploadBox.addEventListener("dragover", (event) => {
