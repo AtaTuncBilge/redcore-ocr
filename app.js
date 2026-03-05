@@ -308,6 +308,56 @@ function inferLanguage(text) {
   return "eng";
 }
 
+// Detect script/language from OCR text by checking Unicode character ranges
+function detectScriptLanguage(text) {
+  var t = text || "";
+  // Turkish specific
+  if (/[çğıöşüÇĞİÖŞÜ]/.test(t)) return "tur";
+  // Arabic script
+  if (/[\u0600-\u06FF]/.test(t)) return "ara";
+  // CJK (Chinese)
+  if (/[\u4E00-\u9FFF]/.test(t)) return "chi_sim";
+  // Japanese (Hiragana/Katakana)
+  if (/[\u3040-\u309F\u30A0-\u30FF]/.test(t)) return "jpn";
+  // Korean (Hangul)
+  if (/[\uAC00-\uD7AF\u1100-\u11FF]/.test(t)) return "kor";
+  // Cyrillic (Russian default)
+  if (/[\u0400-\u04FF]/.test(t)) return "rus";
+  // Greek
+  if (/[\u0370-\u03FF]/.test(t)) return "ell";
+  // Hebrew
+  if (/[\u0590-\u05FF]/.test(t)) return "heb";
+  // Devanagari (Hindi)
+  if (/[\u0900-\u097F]/.test(t)) return "hin";
+  // Thai
+  if (/[\u0E00-\u0E7F]/.test(t)) return "tha";
+  // Bengali
+  if (/[\u0980-\u09FF]/.test(t)) return "ben";
+  // Tamil
+  if (/[\u0B80-\u0BFF]/.test(t)) return "tam";
+  // Georgian
+  if (/[\u10A0-\u10FF]/.test(t)) return "kat";
+  // Armenian
+  if (/[\u0530-\u058F]/.test(t)) return "hye";
+  // German (ß, umlauts)
+  if (/[äöüßÄÖÜ]/.test(t)) return "deu";
+  // French (accents)
+  if (/[àâæçéèêëîïôœùûüÿ]/i.test(t)) return "fra";
+  // Spanish (ñ, ¿, ¡)
+  if (/[ñ¿¡]/i.test(t)) return "spa";
+  // Portuguese
+  if (/[ãõ]/i.test(t)) return "por";
+  // Polish
+  if (/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/.test(t)) return "pol";
+  // Romanian
+  if (/[ăâîșțĂÂÎȘȚ]/.test(t)) return "ron";
+  // Czech/Slovak
+  if (/[ěščřžýáíéůúďťňĚŠČŘŽÝÁÍÉŮÚĎŤŇ]/.test(t)) return "ces";
+  // Vietnamese
+  if (/[\u01A0-\u01B0\u1EA0-\u1EF9]/.test(t)) return "vie";
+  return "eng";
+}
+
 function deriveStabilityRate(progress) {
   const p = Math.max(0, Math.min(100, Number(progress) || 0));
   if (p >= 100) return 100;
@@ -516,12 +566,6 @@ async function processFiles(files) {
 
     worker = await Tesseract.createWorker(workerOpts);
 
-    updateProgress(8, "Loading language: " + languageLabel(selectedLang) + "...");
-    await worker.loadLanguage(selectedLang);
-    await worker.initialize(selectedLang);
-
-    if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(selectedLang);
-
     // Pre-render all pages across all files for faster sequential OCR
     var allPages = [];
     for (let fileIndex = 0; fileIndex < validFiles.length; fileIndex++) {
@@ -541,6 +585,35 @@ async function processFiles(files) {
       }
     }
 
+    // Auto-detect: OCR first page with eng, detect script, pick best language
+    var ocrLang = selectedLang;
+    if (selectedLang === "eng+tur" && allPages.length > 0) {
+      updateProgress(12, "Detecting language...");
+      await worker.loadLanguage("eng");
+      await worker.initialize("eng");
+      var probe = await worker.recognize(allPages[0].canvas);
+      var detected = detectScriptLanguage(probe.data.text);
+      ocrLang = detected;
+      if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(detected) + " (detected)";
+
+      // Re-initialize with detected language if different from eng
+      if (detected !== "eng") {
+        // Need CDN for non-local languages
+        if (!isLocalLang(detected)) {
+          await worker.terminate();
+          worker = await Tesseract.createWorker({ langPath: TESS_CDN, gzip: true, logger: workerOpts.logger });
+        }
+        updateProgress(14, "Loading " + languageLabel(detected) + "...");
+        await worker.loadLanguage(detected);
+        await worker.initialize(detected);
+      }
+    } else {
+      updateProgress(8, "Loading " + languageLabel(selectedLang) + "...");
+      await worker.loadLanguage(selectedLang);
+      await worker.initialize(selectedLang);
+      if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(selectedLang);
+    }
+
     // OCR each page
     for (let i = 0; i < allPages.length; i++) {
       if (!isProcessing) break;
@@ -552,8 +625,8 @@ async function processFiles(files) {
       var result = await worker.recognize(pageInfo.canvas);
       var data = result.data;
 
-      // Infer language for display
-      var lang = (selectedLang === "eng+tur") ? inferLanguage(data.text) : selectedLang;
+      // Use detected/selected language for display
+      var lang = ocrLang;
       if (ui.detectedLang) ui.detectedLang.textContent = languageLabel(lang);
 
       // Batch-add simulation words (no per-word delay)
@@ -603,6 +676,21 @@ async function processFiles(files) {
   }
 }
 
+function downloadText() {
+  if (!ocrRows.length) return;
+  var lines = ocrRows.map(function (row) {
+    return "=== " + row.fileName + " | Page " + row.page + " | " + row.language + " | Confidence: " + Math.round(row.confidence) + "% ===\n" + row.fullText;
+  });
+  var content = lines.join("\n\n" + "—".repeat(60) + "\n\n");
+  var blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "redcore_ocr_text_" + new Date().toISOString().slice(0, 10) + ".txt";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function downloadExcel() {
   if (!ocrRows.length) return;
   const sheetRows = ocrRows.map(row => [row.fileName, row.page, row.language, Math.round(row.confidence), row.characters, row.fullText]);
@@ -623,6 +711,8 @@ function wireEvents() {
   ui.fileInput.addEventListener("change", function (e) { processFiles(e.target.files); });
   ui.pickFileBtn.addEventListener("click", function () { ui.fileInput.click(); });
   ui.downloadBtn.addEventListener("click", downloadExcel);
+  var dlTextBtn = document.getElementById("downloadTextBtn");
+  if (dlTextBtn) dlTextBtn.addEventListener("click", downloadText);
   if (ui.backToUploadBtn) ui.backToUploadBtn.addEventListener("click", goBackToUpload);
 
   ui.uploadBox.addEventListener("dragover", function (e) { e.preventDefault(); ui.uploadBox.classList.add("dragover"); });

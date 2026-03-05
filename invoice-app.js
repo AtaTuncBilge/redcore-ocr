@@ -303,6 +303,7 @@ async function processFiles(files) {
 
     setWarning([...new Set(collectedWarnings)].join(" | "));
     displayResults();
+    showSummary();
     updateProgress(100, "Invoice OCR completed.");
 
     ui.progressSection.style.display = "none";
@@ -318,6 +319,38 @@ async function processFiles(files) {
       await worker.terminate();
     }
   }
+}
+
+function showSummary() {
+  var el = document.getElementById("invoiceSummary");
+  if (!el || !extractedData.length) return;
+  el.style.display = "grid";
+  var totalQty = 0, grandTotal = 0;
+  var parseMoney = (typeof window.OcrCore !== "undefined" && typeof window.OcrCore.parseTurkishMoney === "function") ? window.OcrCore.parseTurkishMoney : function () { return null; };
+  extractedData.forEach(function (item) {
+    totalQty += Number(item.quantity) || 1;
+    var val = parseMoney(item.total);
+    if (val != null) grandTotal += val;
+  });
+  var qtyEl = document.getElementById("summaryQty");
+  var totalEl = document.getElementById("summaryTotal");
+  if (qtyEl) qtyEl.textContent = String(totalQty);
+  if (totalEl) totalEl.textContent = grandTotal.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " TL";
+}
+
+function downloadText() {
+  if (!extractedData.length) return;
+  var lines = extractedData.map(function (item) {
+    return [item.invoiceDate, item.invoiceNo, item.description, "Qty:" + item.quantity, "Unit:" + item.unitPrice, "Total:" + item.total].join(" | ");
+  });
+  var content = "INVOICE OCR EXPORT\n" + "=".repeat(60) + "\n\n" + lines.join("\n");
+  var blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "invoice_ocr_text_" + new Date().toISOString().slice(0, 10) + ".txt";
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function downloadExcel() {
@@ -369,6 +402,8 @@ function wireEvents() {
 
   ui.pickFileBtn.addEventListener("click", () => ui.fileInput.click());
   ui.downloadBtn.addEventListener("click", downloadExcel);
+  var dlTextBtn = document.getElementById("downloadTextBtn");
+  if (dlTextBtn) dlTextBtn.addEventListener("click", downloadText);
 
   if (ui.backToUploadBtn) {
     ui.backToUploadBtn.addEventListener("click", goBackToUpload);
