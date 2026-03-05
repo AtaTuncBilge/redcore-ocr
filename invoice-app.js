@@ -222,11 +222,13 @@ function displayResults() {
 }
 
 async function createOcrWorker() {
-  const options = {
-    logger: m => console.log(m),
-    langPath: './lang-data'
-  };
-  const worker = await Tesseract.createWorker(options);
+  // Tesseract.js 4.x: createWorker(langs, oem, options)
+  // gzip: false because local traineddata files are not gzipped
+  const worker = await Tesseract.createWorker("tur+eng", 1, {
+    langPath: './lang-data',
+    gzip: false,
+    logger: m => console.log(m)
+  });
   return worker;
 }
 
@@ -284,9 +286,7 @@ async function processFiles(files) {
   let worker;
   try {
     worker = await createOcrWorker();
-    updateProgress(10, "Loading OCR language: Turkish + English");
-    await worker.loadLanguage("tur+eng");
-    await worker.initialize("tur+eng");
+    updateProgress(10, "OCR engine ready: Turkish + English");
     await worker.setParameters({
       preserve_interword_spaces: "1",
       user_defined_dpi: "300"
@@ -307,8 +307,10 @@ async function processFiles(files) {
     ui.progressSection.style.display = "none";
     ui.resultsSection.style.display = "block";
   } catch (error) {
-    setWarning(`Invoice OCR error: ${error.message}`);
-    alert(`An error occurred while processing invoices: ${error.message}`);
+    var errMsg = (error && error.message) ? error.message : String(error || "Unknown error");
+    console.error("Invoice OCR Error:", error);
+    setWarning("Invoice OCR error: " + errMsg);
+    alert("An error occurred while processing invoices: " + errMsg);
     goBackToUpload();
   } finally {
     if (worker) {

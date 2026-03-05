@@ -385,8 +385,10 @@ async function processFiles(files) {
 
     // Tesseract.js 4.x: createWorker(langs, oem, options)
     // OEM 1 = LSTM only (best accuracy)
+    // gzip: false because local traineddata files are not gzipped
     worker = await Tesseract.createWorker("eng+tur", 1, {
       langPath: './lang-data',
+      gzip: false,
       logger: function (m) {
         if (m.status === "recognizing text") {
           updateProgress(

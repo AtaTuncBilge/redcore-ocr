@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>invoice ocr — redcore</title>
+  <title>invoice ocr — redcore-ocr</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -38,7 +38,7 @@
           <input type="text" id="usernameInput" class="auth-input" placeholder="Enter your name..." autocomplete="off">
         </div>
         <div class="auth-actions">
-          <button class="btn btn-primary btn-block" id="loginBtn">enter invoice ocr</button>
+          <button class="btn btn-primary btn-block" id="loginBtn"><svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> enter invoice ocr</button>
         </div>
       </div>
     </div>
@@ -82,14 +82,14 @@
           <h2>upload invoice PDFs</h2>
           <p>Drop or select PDF invoices. The parser extracts matched line items.</p>
           <input type="file" id="fileInput" accept=".pdf" multiple hidden>
-          <button class="btn btn-primary" id="pickFileBtn" type="button">select pdf</button>
+          <button class="btn btn-primary" id="pickFileBtn" type="button"><svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> select pdf</button>
         </div>
       </section>
 
       <section class="panel progress-section" id="progressSection" style="display:none;">
         <div class="progress-top">
           <h3>invoice ocr processing</h3>
-          <button class="btn btn-secondary btn-compact" id="backToUploadBtn" type="button">go back</button>
+          <button class="btn btn-secondary btn-compact" id="backToUploadBtn" type="button"><svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> go back</button>
         </div>
         <p class="progress-copy" id="progressText">Preparing...</p>
         <div class="progress-bar">
@@ -129,7 +129,7 @@
           </table>
         </div>
         <div class="actions">
-          <button class="btn btn-success" id="downloadBtn" type="button">download excel</button>
+          <button class="btn btn-success" id="downloadBtn" type="button"><svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> download excel</button>
         </div>
       </section>
     </main>

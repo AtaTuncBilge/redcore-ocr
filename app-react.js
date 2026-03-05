@@ -50,7 +50,7 @@
                   <input type="text" id="usernameInput" class="auth-input" placeholder="Enter your name..." autocomplete="off">
                 </div>
                 <div class="auth-actions">
-                  <button class="btn btn-primary btn-block" id="loginBtn">enter platform</button>
+                  <button class="btn btn-primary btn-block" id="loginBtn"><svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> enter platform</button>
                 </div>
               </div>
             </div>
@@ -62,7 +62,7 @@
                 <div class="hero-mark">
                   <span class="dot"></span>
                   <span class="brand">redcore-ocr</span>
-                  <span class="build-tag">v2.4</span>
+                  <span class="build-tag">v2.5</span>
                 </div>
               </div>
               <nav class="site-nav" aria-label="Main navigation">
@@ -95,17 +95,17 @@
               <section class="panel upload-section reveal-up delay-2">
                 <div class="upload-box" id="uploadBox">
                   <div class="upload-chip">universal ocr</div>
-                  <h2>upload files</h2>
+                  <h2><svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg> upload files</h2>
                   <p>Drop PDF or image files. Language detected automatically.</p>
                   <input type="file" id="fileInput" accept=".pdf,image/*" multiple hidden>
-                  <button class="btn btn-primary" id="pickFileBtn" type="button">select files</button>
+                  <button class="btn btn-primary" id="pickFileBtn" type="button"><svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> select files</button>
                 </div>
               </section>
 
               <section class="panel progress-section" id="progressSection" style="display:none;">
                 <div class="progress-top">
-                  <h3>ocr processing</h3>
-                  <button class="btn btn-secondary btn-compact" id="backToUploadBtn" type="button">cancel</button>
+                  <h3><svg class="section-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ocr processing</h3>
+                  <button class="btn btn-secondary btn-compact" id="backToUploadBtn" type="button"><svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> cancel</button>
                 </div>
 
                 <div class="simulation-view">
@@ -139,7 +139,7 @@
                 <div id="resultsSectionAnchor"></div>
                 <div class="results-header">
                   <div>
-                    <h2>extracted text</h2>
+                    <h2><svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> extracted text</h2>
                     <p>Recognized pages listed below. Download as Excel.</p>
                   </div>
                   <div class="stats">
@@ -166,7 +166,7 @@
                 </div>
 
                 <div class="actions">
-                  <button class="btn btn-success" id="downloadBtn" type="button">download excel</button>
+                  <button class="btn btn-success" id="downloadBtn" type="button"><svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> download excel</button>
                 </div>
               </section>
 
@@ -175,7 +175,7 @@
               <section class="panel reviews-section reveal-up" id="reviewsSection">
                 <div class="results-header">
                   <div>
-                    <h2>community reviews</h2>
+                    <h2><svg class="section-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> community reviews</h2>
                     <p>What people are saying about Redcore OCR.</p>
                   </div>
                 </div>
@@ -197,6 +197,13 @@
                   </div>
                 </div>
                 <div class="review-form-simple">
+                  <div class="star-rating" id="starRating">
+                    <button type="button" class="star-btn" data-value="1">&#9733;</button>
+                    <button type="button" class="star-btn" data-value="2">&#9733;</button>
+                    <button type="button" class="star-btn" data-value="3">&#9733;</button>
+                    <button type="button" class="star-btn" data-value="4">&#9733;</button>
+                    <button type="button" class="star-btn" data-value="5">&#9733;</button>
+                  </div>
                   <input type="text" id="newReviewText" class="auth-input" placeholder="Write a quick review...">
                   <button class="btn btn-secondary btn-compact" id="submitReviewBtn">post review</button>
                 </div>

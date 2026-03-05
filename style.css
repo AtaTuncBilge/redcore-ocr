@@ -10,7 +10,7 @@
   --surface: rgba(255,255,255,0.05);
   --surface-hover: rgba(255,255,255,0.08);
   --fg: #EDEDEF;
-  --fg-muted: #8A8F98;
+  --fg-muted: #A0A5AE;
   --fg-subtle: rgba(255,255,255,0.60);
   --accent: #FF1E3C;
   --accent-bright: #FF3A54;
@@ -390,7 +390,7 @@ body {
 .main-stack {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 40px;
 }
 
 /* ---- Upload Section ---- */
@@ -950,7 +950,7 @@ tr:hover td {
 
 .site-footer p {
   color: var(--fg-muted);
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   font-weight: 500;
 }
 
@@ -977,6 +977,55 @@ tr:hover td {
   height: 1px;
   background: linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent);
   margin: 8px 0;
+}
+
+/* ---- Button Icons ---- */
+.btn-icon {
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+/* ---- Section Icons (inline with headings) ---- */
+.section-icon {
+  display: inline-block;
+  vertical-align: -3px;
+  margin-right: 6px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ---- Star Rating Widget ---- */
+.star-rating {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.4rem;
+  color: rgba(255,255,255,0.15);
+  padding: 4px;
+  transition: color var(--duration-fast) var(--ease-expo),
+              transform var(--duration-fast) var(--ease-expo);
+  line-height: 1;
+}
+
+.star-btn:hover {
+  transform: scale(1.15);
+}
+
+.star-btn.hovered {
+  color: #F5A623;
+}
+
+.star-btn.active {
+  color: #F5A623;
+  text-shadow: 0 0 8px rgba(245,166,35,0.4);
 }
 
 /* ---- Reduced Motion ---- */
@@ -1247,7 +1296,7 @@ tr:hover td {
 .footer-link {
   color: var(--fg-muted);
   text-decoration: none;
-  font-size: 0.82rem;
+  font-size: 0.88rem;
   font-weight: 600;
   transition: color var(--duration-fast) var(--ease-expo);
 }
