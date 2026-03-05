@@ -383,10 +383,8 @@ async function processFiles(files) {
   try {
     updateProgress(5, "Initializing OCR engine...");
 
-    // Tesseract.js 4.x: createWorker(langs, oem, options)
-    // OEM 1 = LSTM only (best accuracy)
-    // gzip: false because local traineddata files are not gzipped
-    worker = await Tesseract.createWorker("eng+tur", 1, {
+    // Tesseract.js 4.x API: createWorker(options) then loadLanguage + initialize
+    worker = await Tesseract.createWorker({
       langPath: './lang-data',
       gzip: false,
       logger: function (m) {
@@ -398,6 +396,8 @@ async function processFiles(files) {
         }
       }
     });
+    await worker.loadLanguage("eng+tur");
+    await worker.initialize("eng+tur");
 
     if (ui.detectedLang) ui.detectedLang.textContent = "English + Turkish";
 

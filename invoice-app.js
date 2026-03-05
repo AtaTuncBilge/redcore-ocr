@@ -222,9 +222,8 @@ function displayResults() {
 }
 
 async function createOcrWorker() {
-  // Tesseract.js 4.x: createWorker(langs, oem, options)
-  // gzip: false because local traineddata files are not gzipped
-  const worker = await Tesseract.createWorker("tur+eng", 1, {
+  // Tesseract.js 4.x API: createWorker(options) then loadLanguage + initialize
+  const worker = await Tesseract.createWorker({
     langPath: './lang-data',
     gzip: false,
     logger: m => console.log(m)
@@ -286,7 +285,9 @@ async function processFiles(files) {
   let worker;
   try {
     worker = await createOcrWorker();
-    updateProgress(10, "OCR engine ready: Turkish + English");
+    updateProgress(10, "Loading OCR language: Turkish + English");
+    await worker.loadLanguage("tur+eng");
+    await worker.initialize("tur+eng");
     await worker.setParameters({
       preserve_interword_spaces: "1",
       user_defined_dpi: "300"
