@@ -368,10 +368,22 @@ function downloadExcel() {
     typeof window.OcrCore?.parseTurkishMoney === "function" ? window.OcrCore.parseTurkishMoney(item.total) : null
   ]);
 
-  const sheet = XLSX.utils.aoa_to_sheet([
+  var parseMoney = (typeof window.OcrCore !== "undefined" && typeof window.OcrCore.parseTurkishMoney === "function") ? window.OcrCore.parseTurkishMoney : function () { return null; };
+  var totalQty = 0, grandTotal = 0;
+  extractedData.forEach(function (item) {
+    totalQty += Number(item.quantity) || 1;
+    var val = parseMoney(item.total);
+    if (val != null) grandTotal += val;
+  });
+
+  const sheetData = [
     ["Invoice Date", "Invoice No", "Product Description", "Quantity", "Unit Price", "Total"],
-    ...rows
-  ]);
+    ...rows,
+    [],
+    ["", "", "GRAND TOTAL", totalQty, "", grandTotal]
+  ];
+
+  const sheet = XLSX.utils.aoa_to_sheet(sheetData);
 
   sheet["!cols"] = [
     { wch: 16 },
